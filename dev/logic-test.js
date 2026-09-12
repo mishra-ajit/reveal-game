@@ -49,11 +49,13 @@ v = S.apiPoll(pid.Ajit);
 ok(v.round===1 && v.phase==='question' && v.q, 'round 1 started with a question');
 ok(v.q.answer === undefined && v.reveal === undefined, 'answer is NOT sent while answering');
 
-const correct = S.content().numbers[0].answer;                 // 385000
-S.apiAnswer(pid.Ajit,   correct);          // exact
-S.apiAnswer(pid.Priya,  correct - 1000);   // 2nd
-S.apiAnswer(pid.Neha,   correct - 5000);   // 3rd
-S.apiAnswer(pid.Karan,  1);                // way off
+const q1 = S.content().numbers[0];
+ok(q1.type === 'mc' && q1.options.length === 4, 'round 1 questions are multiple choice');
+const wrong = ['A','B','C','D'].filter(l => l !== q1.answer)[0];
+S.apiAnswer(pid.Ajit,   q1.answer);        // blue, correct
+S.apiAnswer(pid.Priya,  q1.answer);        // blue, correct
+S.apiAnswer(pid.Neha,   wrong);            // blue, wrong
+S.apiAnswer(pid.Karan,  wrong);            // pink, wrong
 v = S.apiPoll(pid.Ajit);
 ok(v.answeredCount === 4, 'answer count tracks');
 ok(v.players.find(p=>p.name==='Ajit').answered === true, 'host can see who answered');
@@ -62,11 +64,11 @@ S.apiHost(PIN, 'reveal', {});
 v = S.apiPoll(pid.Ajit);
 ok(v.phase==='reveal' && v.reveal, 'reveal exposes the answer');
 const byName = Object.fromEntries(v.reveal.rows.map(r=>[r.name,r.points]));
-ok(byName.Ajit===3 && byName.Priya===2 && byName.Neha===1 && byName.Karan===0, '3/2/1 to the closest three');
-ok(v.scores.blue===5 && v.scores.pink===1, 'team score = sum of its players');
+ok(byName.Ajit===2 && byName.Priya===2 && byName.Neha===0 && byName.Karan===0, '2 points per correct answer');
+ok(v.scores.blue===4 && v.scores.pink===0, 'team score = sum of its players');
 
 S.apiHost(PIN, 'reveal', {});   // double reveal must not double-award
-ok(S.apiPoll(pid.Ajit).scores.blue===5, 'revealing twice does not award twice');
+ok(S.apiPoll(pid.Ajit).scores.blue===4, 'revealing twice does not award twice');
 
 S.apiHost(PIN, 'next', {});
 ok(S.apiPoll(pid.Ajit).qIndex===1 && S.apiPoll(pid.Ajit).phase==='question', 'advanced to question 2');
@@ -123,7 +125,7 @@ ok(v.b2045.alloc.blue && v.b2045.alloc.pink, 'both strategies visible at compare
 S.apiHost(PIN, 'judge', {winner:'pink'});
 v = S.apiPoll(pid.Ajit);
 ok(v.b2045.winner==='pink', 'host picked pink');
-ok(v.scores.pink === 1 + 15, 'each pink player got 5 points');
+ok(v.scores.pink === 15, 'each pink player got 5 points');
 
 // --- ROUND 3
 S.apiHost(PIN, 'startRound', {round:3});
@@ -144,15 +146,11 @@ S.apiHost(PIN,'next',{});
 ok(S.apiPoll(pid.Ajit).q.type==='image', 'image-choice question renders');
 ok(S.apiPoll(pid.Ajit).q.images.length===4, 'four option images');
 
-// number-type trivia scores like round 1
-const ti = S.content().trivia.findIndex(q=>q.type==='number');
-S.apiHost(PIN,'startRound',{round:3});
-for (let i=0;i<ti;i++) S.apiHost(PIN,'next',{});
-ok(S.apiPoll(pid.Ajit).qIndex===ti, 'walked to the number question');
-S.apiAnswer(pid.Karan, S.content().trivia[ti].answer);
-const pinkPre = S.apiPoll(pid.Ajit).scores.pink;
-S.apiHost(PIN,'reveal',{});
-ok(S.apiPoll(pid.Ajit).scores.pink === pinkPre + 3, 'closest number guess scores 3');
+// every question in the game is now multiple choice
+const allQ = S.content().numbers.concat(S.content().trivia);
+ok(allQ.every(q => q.type === 'mc' || q.type === 'image'), 'no free-entry questions remain');
+ok(allQ.every(q => (q.options || []).length === 4), 'every question offers four options');
+ok(allQ.every(q => ['A','B','C','D'].indexOf(String(q.answer)) >= 0), 'every answer is a valid letter');
 
 // --- manual award, end, reset
 S.apiHost(PIN,'award',{pid:pid.Ajit, points:1});
