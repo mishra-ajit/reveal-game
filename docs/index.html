@@ -258,7 +258,18 @@ var lastV = -1;       // last rendered version
 var draft = {};       // local, unsent answer / allocation
 var busy = false;
 
-try { PID = localStorage.getItem('reveal.pid') || null; } catch (e) {}
+var SAVED = { name: '', team: null };
+try {
+  PID = localStorage.getItem('reveal.pid') || null;
+  SAVED.name = localStorage.getItem('reveal.name') || '';
+  SAVED.team = localStorage.getItem('reveal.team') || null;
+} catch (e) {}
+
+// A tap and a redraw must never collide: redrawing under someone's finger
+// swallows the tap, so hold updates for a moment after any touch.
+var lastTap = 0, heldRender = null;
+document.addEventListener('pointerdown', function(){ lastTap = Date.now(); }, true);
+function quiet(){ return Date.now() - lastTap > 1200; }
 
 /* ---------------------------------------------------------------- utils */
 function $(id){ return document.getElementById(id); }
@@ -291,6 +302,11 @@ function apply(v, force){
   // don't yank a keyboard away mid-type
   var a = document.activeElement;
   if (!force && a && a.tagName === 'INPUT') return;
+  if (!force && !quiet()) {
+    clearTimeout(heldRender);
+    heldRender = setTimeout(render, 1200);
+    return;
+  }
   render();
 }
 
@@ -298,14 +314,15 @@ function apply(v, force){
 function poll(){
   if (!PID || busy) return;
   google.script.run.withSuccessHandler(function(v){
-    if (!v.me) { PID = null; try{ localStorage.removeItem('reveal.pid'); }catch(e){} lastV = -1; render(); return; }
+    // Host wiped the game? Keep the name and team so rejoining is one tap.
+    if (!v.me) { PID = null; lastV = -1; render(); return; }
     apply(v);
   }).withFailureHandler(function(){}).apiPoll(PID);
 }
 setInterval(poll, 2500);
 
 /* ---------------------------------------------------------------- join */
-var joinTeam = null;
+var joinTeam = SAVED.team;
 
 function renderJoin(){
   return '' +
@@ -321,9 +338,10 @@ function renderJoin(){
         '<span class="dot"></span>Pink</button>' +
     '</div>' +
     '<input type="text" id="nameIn" placeholder="Your first name" autocomplete="given-name" ' +
-      'maxlength="18" enterkeyhint="go" oninput="refreshJoinBtn()" ' +
+      'maxlength="18" enterkeyhint="go" value="' + esc(SAVED.name) + '" oninput="refreshJoinBtn()" ' +
       'onkeydown="if(event.key===\'Enter\')doJoin()">' +
-    '<button class="btn" id="joinBtn" disabled onclick="doJoin()">Join the game</button>' +
+    '<button class="btn" id="joinBtn" disabled onclick="doJoin()">' +
+      (SAVED.name ? 'Rejoin as ' + esc(SAVED.name) : 'Join the game') + '</button>' +
   '</div>';
 }
 
@@ -350,7 +368,12 @@ function doJoin(){
     .withSuccessHandler(function(r){
       busy = false;
       PID = r.pid;
-      try { localStorage.setItem('reveal.pid', PID); } catch (e) {}
+      SAVED.name = name; SAVED.team = joinTeam;
+      try {
+        localStorage.setItem('reveal.pid', PID);
+        localStorage.setItem('reveal.name', name);
+        localStorage.setItem('reveal.team', joinTeam);
+      } catch (e) {}
       apply(r.view, true);
     })
     .withFailureHandler(function(e){
@@ -709,18 +732,42 @@ function renderFinal(){
 }
 
 /* ---------------------------------------------------------------- render */
-function render(){
-  var app = $('app');
-  if (!PID || !V || !V.me){ app.className = 'wrap'; app.innerHTML = renderJoin(); refreshJoinBtn(); return; }
-  app.className = 'wrap';
+var lastHtml = null, lastScreen = null;
 
-  if (V.status === 'ended'){ app.innerHTML = renderFinal(); return; }
-  if (V.round === 2){ app.innerHTML = renderB2045(); return; }
-  if (V.round === 1 || V.round === 3){
-    app.innerHTML = (V.phase === 'reveal') ? renderReveal() : renderQuestion();
-    return;
+/** Which screen we are on — not what is on it. */
+function screenKey(){
+  if (!PID || !V || !V.me) return 'join';
+  if (V.status === 'ended') return 'final';
+  if (V.round === 2) return 'b2045:' + (V.b2045 ? V.b2045.phase : '');
+  if (V.round === 1 || V.round === 3) return 'q:' + V.round + ':' + V.qIndex + ':' + V.phase;
+  return 'lobby';
+}
+
+function screenHtml(){
+  if (!PID || !V || !V.me) return renderJoin();
+  if (V.status === 'ended') return renderFinal();
+  if (V.round === 2) return renderB2045();
+  if (V.round === 1 || V.round === 3) {
+    return (V.phase === 'reveal') ? renderReveal() : renderQuestion();
   }
-  app.innerHTML = renderLobby();
+  return renderLobby();
+}
+
+function render(){
+  clearTimeout(heldRender);
+  var app = $('app');
+  var key = screenKey();
+  var html = screenHtml();
+
+  // Arriving somewhere new is worth an animation. A scoreboard ticking over
+  // is not — replaying it on every poll is what made the page blink.
+  if (key === lastScreen) html = html.replace(/ fade\b/g, '');
+  if (html === lastHtml) return;
+
+  lastHtml = html; lastScreen = key;
+  app.className = 'wrap';
+  app.innerHTML = html;
+  if (key === 'join') refreshJoinBtn();
 }
 
 /* ---------------------------------------------------------------- boot */
