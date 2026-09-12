@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Reveal · Host</title>
+  <?!= include('Css') ?>
+</head>
+<body>
+<div class="wrap wide" id="app"></div>
+
+<script>
+var PIN = '<?= pin ?>' || null;
+var V = null, lastV = -1, busy = false;
+if (!PIN) { try { PIN = localStorage.getItem('reveal.pin') || null; } catch (e) {} }
+if (PIN) { try { localStorage.setItem('reveal.pin', PIN); } catch (e) {} }
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function teamName(t){ return t === 'pink' ? 'Pink' : 'Blue'; }
+function toast(msg){
+  var el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el); setTimeout(function(){ el.remove(); }, 2600);
+}
+
+function act(action, payload, confirmMsg){
+  if (confirmMsg && !window.confirm(confirmMsg)) return;
+  busy = true;
+  google.script.run
+    .withSuccessHandler(function(v){ busy = false; V = v; lastV = v.v; render(); })
+    .withFailureHandler(function(e){ busy = false; toast(e.message || 'Failed'); })
+    .apiHost(PIN, action, payload || {});
+}
+
+function poll(){
+  if (!PIN || busy) return;
+  google.script.run.withSuccessHandler(function(v){
+    V = v; if (v.v !== lastV) { lastV = v.v; render(); }
+  }).withFailureHandler(function(){}).apiHostPoll(PIN);
+}
+setInterval(poll, 2500);
+
+/* ---------------------------------------------------------------- PIN gate */
+function renderPin(){
+  return '<div class="card stack center" style="margin-top:40px">' +
+    '<h2>Host console</h2>' +
+    '<p class="sub">Enter your host PIN.</p>' +
+    '<input type="tel" id="pinIn" inputmode="numeric" placeholder="PIN" ' +
+      'onkeydown="if(event.key===\'Enter\')savePin()">' +
+    '<button class="btn" onclick="savePin()">Unlock</button>' +
+  '</div>';
+}
+function savePin(){
+  var p = $('pinIn').value.trim();
+  if (!p) return;
+  busy = true;
+  google.script.run
+    .withSuccessHandler(function(v){
+      busy = false; PIN = p; try{ localStorage.setItem('reveal.pin', p); }catch(e){}
+      V = v; lastV = v.v; render();
+    })
+    .withFailureHandler(function(e){ busy = false; toast(e.message || 'Wrong PIN'); })
+    .apiHostPoll(p);
+}
+
+/* ---------------------------------------------------------------- parts */
+function board(){
+  return '<div class="board">' +
+    '<div class="side blue"><span class="label">Blue</span><span class="num">' + V.scores.blue + '</span></div>' +
+    '<div class="side pink"><span class="label">Pink</span><span class="num">' + V.scores.pink + '</span></div>' +
+  '</div>';
+}
+
+function steps(){
+  var items = [
+    { r: 0, label: 'Lobby' },
+    { r: 1, label: '1 · Numbers' },
+    { r: 2, label: '2 · Baby 2045' },
+    { r: 3, label: '3 · Trivia' },
+    { r: 4, label: 'Finish' }
+  ];
+  return '<div class="steps">' + items.map(function(it){
+    var on = (V.round === it.r) ? ' on' : '';
+    var fn = it.r === 0 ? "act('backToLobby')"
+           : it.r === 4 ? "act('endGame')"
+           : "act('startRound',{round:" + it.r + "})";
+    return '<button class="' + on.trim() + '" onclick="' + fn + '">' + it.label + '</button>';
+  }).join('') + '</div>';
+}
+
+function players(){
+  var rows = V.players.map(function(p){
+    var isCap = V.b2045Full && (V.b2045Full.captain.blue === p.id || V.b2045Full.captain.pink === p.id);
+    return '<div class="hrow">' +
+      '<span class="pip ' + p.team + '"></span>' +
+      '<span class="nm">' + esc(p.name) +
+        (isCap ? ' <span class="pill grey" style="font-size:10px;padding:2px 7px">captain</span>' : '') +
+      '</span>' +
+      (V.round === 1 || V.round === 3
+        ? '<span class="pill ' + (p.answered ? 'ok' : 'grey') + '" style="font-size:11px">' +
+          (p.answered ? 'in' : '—') + '</span>' : '') +
+      '<span class="tiny" style="min-width:26px;text-align:right;font-weight:700;color:var(--ink)">' +
+        p.score + '</span>' +
+      '<span class="seg">' +
+        '<button class="' + (p.team === 'blue' ? 'on b' : '') + '" ' +
+          'onclick="act(\'setTeam\',{pid:\'' + p.id + '\',team:\'blue\'})">B</button>' +
+        '<button class="' + (p.team === 'pink' ? 'on p' : '') + '" ' +
+          'onclick="act(\'setTeam\',{pid:\'' + p.id + '\',team:\'pink\'})">P</button>' +
+      '</span>' +
+      '<button class="step" style="width:30px;height:30px;font-size:15px" ' +
+        'onclick="act(\'award\',{pid:\'' + p.id + '\',points:1})" title="+1 point">+</button>' +
+      (V.round === 2 ? '<button class="btn ghost sm" onclick="act(\'setCaptain\',{pid:\'' + p.id + '\'})">cap</button>' : '') +
+      '<button class="btn ghost sm" style="color:var(--pink)" ' +
+        'onclick="act(\'removePlayer\',{pid:\'' + p.id + '\'},\'Remove ' + esc(p.name).replace(/'/g,'') + '?\')">×</button>' +
+    '</div>';
+  }).join('');
+  return '<div class="card">' +
+    '<div class="qmeta" style="margin-bottom:10px">Players · ' + V.players.length + '</div>' +
+    (rows || '<p class="sub">Nobody has joined yet. Share the player link.</p>') +
+  '</div>';
+}
+
+/* ---------------------------------------------------------------- round control */
+function roundControl(){
+  if (V.round === 1 || V.round === 3){
+    var q = V.q;
+    var answered = V.answeredCount, tot = V.players.length;
+    return '<div class="card stack">' +
+      '<div>' +
+        '<div class="qmeta">' + (V.round === 1 ? 'Baby by the Numbers' : 'Visual Trivia') +
+          ' · question ' + (V.qIndex + 1) + ' of ' + V.total + '</div>' +
+        '<div class="qtext" style="font-size:18px">' + esc(q ? q.question : '—') + '</div>' +
+        (V.phase === 'reveal' && V.reveal
+          ? '<p class="sub" style="margin-top:8px">Answer: <b style="color:var(--ink)">' +
+            esc(answerText()) + '</b></p>' : '') +
+      '</div>' +
+      '<p class="sub">' + answered + ' of ' + tot + ' answered' +
+        (answered < tot && tot ? ' — waiting on ' + esc(V.players.filter(function(p){ return !p.answered; })
+          .map(function(p){ return p.name; }).join(', ')) : '') + '</p>' +
+      '<div class="row">' +
+        '<button class="btn ghost" onclick="act(\'prev\')"' + (V.qIndex === 0 ? ' disabled' : '') + '>Back</button>' +
+        (V.phase === 'question'
+          ? '<button class="btn" onclick="act(\'reveal\')">Reveal answer</button>'
+          : '<button class="btn" onclick="act(\'next\')">' +
+            (V.qIndex + 1 >= V.total ? 'Round done' : 'Next question') + '</button>') +
+      '</div>' +
+    '</div>';
+  }
+  if (V.round === 2) return b2045Control();
+  if (V.round === 4) return '<div class="card center stack">' +
+      '<h2>Game over</h2><p class="sub">Final scores are on everyone’s screen.</p>' +
+      '<button class="btn ghost" onclick="act(\'backToLobby\')">Back to lobby</button></div>';
+  return '<div class="card stack">' +
+    '<h2>Lobby</h2>' +
+    '<p class="sub">Share the player link, wait for everyone, then start Round 1.</p>' +
+    '<button class="btn" onclick="act(\'startRound\',{round:1})">Start Round 1</button>' +
+  '</div>';
+}
+
+function answerText(){
+  var r = V.reveal, q = V.q;
+  if (!r) return '';
+  if (V.round === 1 || (q && q.type === 'number')) return r.answer + ' ' + (r.unit || '');
+  var i = ['A','B','C','D'].indexOf(String(r.answer));
+  return (q && q.options[i]) || r.answer;
+}
+
+function b2045Control(){
+  var b = V.b2045Full, alloc = b.alloc;
+  var sum = function(o){ return Object.keys(o || {}).reduce(function(a,k){ return a + (Number(o[k])||0); }, 0); };
+  var status = function(t){
+    return '<span class="pill ' + (b.locked[t] ? 'ok' : 'grey') + '">' + teamName(t) + ': ' +
+      (b.locked[t] ? 'locked' : sum(alloc[t]) + '/' + V.budget) + '</span>';
+  };
+
+  var main = '';
+  if (b.phase === 'allocate'){
+    main = '<p class="sub">Captains are allocating. Reveal the scenario once both are locked in.</p>' +
+      '<button class="btn" onclick="act(\'revealScenario\',{scenario:-1})">Reveal a random scenario</button>' +
+      '<div class="row">' + V.scenarios.map(function(t, i){
+        return '<button class="btn ghost sm" onclick="act(\'revealScenario\',{scenario:' + i + '})">' +
+          esc(t) + '</button>';
+      }).join('') + '</div>';
+  } else if (b.phase === 'adjust'){
+    main = '<p class="sub">Scenario is out: <b style="color:var(--ink)">' +
+      esc(V.b2045.scenario ? V.b2045.scenario.title : '') + '</b>. Teams may move ' + V.moveCap + ' points.</p>' +
+      '<button class="btn" onclick="act(\'closeAdjust\')">Lock both teams &amp; compare</button>';
+  } else if (b.phase === 'compare'){
+    main = '<p class="sub">Both strategies are on screen. Pick a winner.</p>' +
+      '<div class="row">' +
+        '<button class="btn blue" onclick="act(\'judge\',{winner:\'blue\'})">Blue wins</button>' +
+        '<button class="btn pink" onclick="act(\'judge\',{winner:\'pink\'})">Pink wins</button>' +
+        '<button class="btn ghost" onclick="act(\'judge\',{winner:\'draw\'})">Draw</button>' +
+      '</div>';
+  } else {
+    main = '<p class="sub">Round complete — ' +
+      (b.winner === 'draw' ? 'called a draw' : 'Team ' + teamName(b.winner) + ' took it') + '.</p>' +
+      '<button class="btn" onclick="act(\'startRound\',{round:3})">Start Round 3 · Trivia</button>';
+  }
+
+  var table = '<div class="compare" style="margin-top:14px">' +
+    '<div class="h b">Blue</div><div></div><div class="h p">Pink</div>' +
+    V.qualities.map(function(q){
+      var bl = Number((alloc.blue || {})[q.key]) || 0, pk = Number((alloc.pink || {})[q.key]) || 0;
+      var w = function(n){ return Math.max(6, n * 2.2); };
+      return '<div class="bar ' + (bl ? 'b' : 'o b') + '" style="width:' + w(bl) + '%">' + (bl || '') + '</div>' +
+             '<div class="lbl">' + esc(q.label) + '</div>' +
+             '<div class="bar ' + (pk ? 'p' : 'o') + '" style="width:' + w(pk) + '%">' + (pk || '') + '</div>';
+    }).join('') + '</div>';
+
+  return '<div class="card stack">' +
+    '<div><div class="qmeta">Round 2 · Baby 2045</div>' +
+     '<div class="row" style="margin-top:8px">' + status('blue') + status('pink') + '</div></div>' +
+    main + table +
+  '</div>';
+}
+
+/* ---------------------------------------------------------------- danger zone */
+function admin(){
+  return '<div class="card stack">' +
+    '<div class="qmeta">Admin</div>' +
+    '<div class="row">' +
+      '<button class="btn ghost sm" onclick="act(\'resetScores\',{},\'Reset all scores and answers? Players stay.\')">Reset scores</button>' +
+      '<button class="btn ghost sm" onclick="act(\'resetGame\',{keepPlayers:true},\'Full reset, keeping players?\')">Reset game</button>' +
+      '<button class="btn ghost sm" style="color:var(--pink)" onclick="act(\'resetGame\',{keepPlayers:false},\'Wipe everything including players?\')">Wipe everything</button>' +
+    '</div>' +
+    (V.playerUrl ? '<p class="tiny" style="word-break:break-all">Player link: <code>' +
+      esc(V.playerUrl) + '</code></p>' : '') +
+  '</div>';
+}
+
+/* ---------------------------------------------------------------- render */
+function render(){
+  var app = $('app');
+  if (!PIN || !V){ app.innerHTML = renderPin(); return; }
+  app.innerHTML = board() + steps() + roundControl() +
+                  '<div style="height:12px"></div>' + players() +
+                  '<div style="height:12px"></div>' + admin();
+}
+
+render();
+if (PIN){
+  google.script.run.withSuccessHandler(function(v){ V = v; lastV = v.v; render(); })
+    .withFailureHandler(function(){ PIN = null; render(); }).apiHostPoll(PIN);
+}
+</script>
+</body>
+</html>
