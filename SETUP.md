@@ -72,9 +72,9 @@ You now have two links:
 Send the player link on WhatsApp. Keep the host link to yourself — anyone with
 it can control the game.
 
-### Shorter links (optional)
+### The links to actually hand out
 
-Those URLs are long. `docs/` in this repo holds two small redirect pages; turn
+`docs/` holds a static copy of the game, built from the same `src/` files. Turn
 on **Settings → Pages → Source: Deploy from a branch → `main` / `/docs`** and
 you get:
 
@@ -84,21 +84,27 @@ you get:
 | **Host (you)** | `https://<user>.github.io/reveal-game/host/` |
 
 The host page asks for the PIN and remembers it — the PIN is deliberately not
-baked into the page, because the page itself is public. If you ever redeploy
-and the `/exec` URL changes, edit the `APP` constant at the bottom of
-`docs/index.html` and `docs/host/index.html`.
+baked into the page, because the page itself is public.
 
-> **If the link shows "Sorry, unable to open the file at this time"** — you are
-> signed into a browser whose *default* Google account is a work/Workspace
-> account, and many Workspace domains block third-party Apps Script web apps.
-> Google resolves the request under that account and refuses. This is not a
-> problem with the deployment.
->
-> It affects only people signed into such an account. Fixes, any one of them:
-> open the link in an incognito window; sign out; or make your personal Gmail
-> the first account in that browser profile. Guests who are not signed into a
-> restricted Workspace account — which is everyone at a party — are unaffected.
-> **Open the host console in incognito if you hit this.**
+These pages work in every browser, signed into Google or not, which the raw
+`/exec` link does not. **Use them.**
+
+After changing anything in `src/`, rebuild and commit the static copy:
+
+```bash
+node dev/build-pages.js
+```
+
+If you redeploy and the `/exec` URL changes, put the new one in
+`dev/exec-url.txt` first.
+
+> **Why guests never see a Google sign-in page.** The links above are static
+> pages on GitHub Pages. They fetch the game from Apps Script as data, with no
+> cookies, so Google always treats the request as anonymous. Opening the raw
+> `/exec` URL in a browser that has a Workspace account signed in still fails
+> with *"Sorry, unable to open the file at this time"* — that is Google
+> resolving the page under that account, and many work domains block
+> third-party Apps Script web apps. Hand out the short links, not `/exec`.
 
 > Changing the PIN: open `Code.gs`, edit `NEW_PIN` inside `setHostPin()`, run
 > that function once.

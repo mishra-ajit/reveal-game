@@ -40,8 +40,8 @@ Short version:
 2. Run `setup()` once. It builds the content Sheet and prints your host PIN.
 3. Deploy as a web app: execute as **me**, access **anyone**.
 4. Players get the plain URL. You get `…/exec?host=<PIN>`.
-5. Optional: turn on GitHub Pages (branch `main`, folder `/docs`) for short
-   links — `/reveal-game/` for players, `/reveal-game/host/` for you.
+5. `node dev/build-pages.js`, then turn on GitHub Pages (branch `main`, folder
+   `/docs`). Hand out `/reveal-game/` and keep `/reveal-game/host/`.
 
 ---
 
@@ -55,8 +55,13 @@ src/Index.html        the player app
 src/Host.html         the host console
 src/Css.html          shared styles
 assets/               trivia images (served via jsDelivr)
-docs/                 GitHub Pages short links (player + host redirects)
+docs/                 static front-end on GitHub Pages (built from src/)
 ```
+
+The pages guests open are static files on GitHub Pages. They call the Apps
+Script deployment as a JSON endpoint, cookieless, so Google sees an anonymous
+request — which is why the game opens for people signed into a work Google
+account, where the raw `/exec` URL does not.
 
 State lives in one JSON blob in Script Properties, guarded by `LockService`.
 Clients poll every 2.5s. With ~15 players that is comfortably inside Apps
