@@ -12,17 +12,19 @@ The winning team has nothing to do with the actual reveal. It's just a game.
 
 ## The rounds
 
-**1 · Baby by the Numbers** — statistical guessing. Everyone types a number;
-closest three score 3 / 2 / 1 points. Reveal shows the answer, everyone's
-guesses, and one line of context.
+**1 · Baby by the Numbers** — surprising statistics, four options each. Pick
+one, score 2 points if you are right. Reveal shows the answer, what everyone
+picked, and one line of context.
 
 **2 · Baby 2045** — each team spends 100 points across ten qualities to prepare
 today's baby for 2045. Captains hold the pen, teammates watch live. Both teams
 lock in, a surprise 2045 scenario drops, each team may move 20 points, then the
 two strategies go up side by side and the couple picks a winner.
 
-**3 · Visual Trivia** — image-led questions, 5–10 seconds each. Correct answer
-scores 2 points; number questions use the 3 / 2 / 1 rule.
+**3 · Visual Trivia** — image-led questions, 5–10 seconds each. Text options or
+picture options; a correct answer scores 2 points.
+
+Every question is multiple choice — nothing to type once you have joined.
 
 Team score is simply the sum of its players' points.
 
@@ -38,6 +40,8 @@ Short version:
 2. Run `setup()` once. It builds the content Sheet and prints your host PIN.
 3. Deploy as a web app: execute as **me**, access **anyone**.
 4. Players get the plain URL. You get `…/exec?host=<PIN>`.
+5. Optional: turn on GitHub Pages (branch `main`, folder `/docs`) for short
+   links — `/reveal-game/` for players, `/reveal-game/host/` for you.
 
 ---
 
@@ -51,6 +55,7 @@ src/Index.html        the player app
 src/Host.html         the host console
 src/Css.html          shared styles
 assets/               trivia images (served via jsDelivr)
+docs/                 GitHub Pages short links (player + host redirects)
 ```
 
 State lives in one JSON blob in Script Properties, guarded by `LockService`.

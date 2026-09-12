@@ -72,6 +72,22 @@ You now have two links:
 Send the player link on WhatsApp. Keep the host link to yourself — anyone with
 it can control the game.
 
+### Shorter links (optional)
+
+Those URLs are long. `docs/` in this repo holds two small redirect pages; turn
+on **Settings → Pages → Source: Deploy from a branch → `main` / `/docs`** and
+you get:
+
+| | |
+|---|---|
+| **Players** | `https://<user>.github.io/reveal-game/` |
+| **Host (you)** | `https://<user>.github.io/reveal-game/host/` |
+
+The host page asks for the PIN and remembers it — the PIN is deliberately not
+baked into the page, because the page itself is public. If you ever redeploy
+and the `/exec` URL changes, edit the `APP` constant at the bottom of
+`docs/index.html` and `docs/host/index.html`.
+
 > **If the link shows "Sorry, unable to open the file at this time"** — you are
 > signed into a browser whose *default* Google account is a work/Workspace
 > account, and many Workspace domains block third-party Apps Script web apps.
@@ -102,22 +118,21 @@ Open the **Reveal Game — Content** spreadsheet (URL from step 2). Four tabs:
 |---|---|
 | `id` | anything unique. Put `#` in front to disable a row. |
 | `question` | shown to players |
-| `answer` | the number |
-| `unit` | shown under the input, e.g. `hours` |
+| `optA…optD` | the four choices |
+| `answer` | `A`, `B`, `C` or `D` |
 | `fact` | one line of context shown on reveal |
 | `source` | where the number came from — never shown to players |
 
 ### `Trivia` — Round 3
 | column | meaning |
 |---|---|
-| `type` | `mc` (text options), `image` (picture options), `number` (guess) |
+| `type` | `mc` (text options) or `image` (picture options) |
 | `question` | shown to players |
 | `image` | main picture URL — any public image works |
 | `optA…optD` | option labels (mc / image) |
 | `imgA…imgD` | option pictures (`image` type only) |
-| `answer` | `A`/`B`/`C`/`D`, or the number for `number` type |
+| `answer` | `A`, `B`, `C` or `D` |
 | `explanation` | one line shown on reveal |
-| `unit` | for `number` type |
 
 ### `Qualities` — Round 2
 `key` (no spaces), `label`, `emoji`. Ten is a good number; the layout handles
