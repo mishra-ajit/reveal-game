@@ -63,6 +63,17 @@ anything clever.
 Everything is in the **Reveal Game — Content** Sheet that `setup()` creates.
 See [SETUP.md](SETUP.md#editing-questions).
 
+## Local development
+
+```bash
+node dev/logic-test.js   # headless run of the real backend through a full game
+node dev/harness.js      # the real UI at localhost:8910, backed by the real Code.gs
+```
+
+The harness stubs `PropertiesService`, `CacheService`, `LockService` and
+`Utilities`, and shims `google.script.run` over `fetch`. It runs the shipped
+source unmodified, so what you play locally is what deploys.
+
 ## Credits
 
 Trivia images come from Wikimedia Commons — see [assets/CREDITS.md](assets/CREDITS.md).

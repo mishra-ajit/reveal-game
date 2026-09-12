@@ -72,6 +72,18 @@ You now have two links:
 Send the player link on WhatsApp. Keep the host link to yourself — anyone with
 it can control the game.
 
+> **If the link shows "Sorry, unable to open the file at this time"** — you are
+> signed into a browser whose *default* Google account is a work/Workspace
+> account, and many Workspace domains block third-party Apps Script web apps.
+> Google resolves the request under that account and refuses. This is not a
+> problem with the deployment.
+>
+> It affects only people signed into such an account. Fixes, any one of them:
+> open the link in an incognito window; sign out; or make your personal Gmail
+> the first account in that browser profile. Guests who are not signed into a
+> restricted Workspace account — which is everyone at a party — are unaffected.
+> **Open the host console in incognito if you hit this.**
+
 > Changing the PIN: open `Code.gs`, edit `NEW_PIN` inside `setHostPin()`, run
 > that function once.
 
@@ -153,6 +165,20 @@ Players who refresh rejoin automatically under the same name, so a dead phone
 battery isn't a problem.
 
 ---
+
+## Testing it yourself
+
+`dev/harness.js` runs the real `src/Code.gs` and `src/Content.gs` under Node
+with the Apps Script services stubbed, and serves the real player and host
+pages against them — so you can play through the whole game locally before the
+party without touching the live state:
+
+```bash
+node dev/harness.js     # http://localhost:8910  (host: /host)
+node dev/logic-test.js  # 41 assertions over scoring, phases and permissions
+```
+
+Add `?seat=b`, `?seat=c` … to open several players in one browser.
 
 ## Notes
 
