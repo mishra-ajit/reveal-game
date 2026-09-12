@@ -23,6 +23,8 @@ function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s == null ? '' : s)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function num(n){ return Number(n).toLocaleString('en-IN'); }
+// Google Sheets turns "3,85,000" into a bare number on the way in.
+function optLabel(s){ return /^\d{4,}$/.test(String(s)) ? num(s) : String(s); }
 function teamName(t){ return t === 'pink' ? 'Pink' : 'Blue'; }
 
 function toast(msg){
@@ -194,7 +196,7 @@ function renderQuestion(){
           return '<button class="opt img' + on + '" onclick="pickOpt(\'' + L + '\')">' +
             '<img src="' + esc(q.images[i] || '') + '" alt=""><span class="cap">' + esc(o) + '</span></button>';
         }
-        return '<button class="opt' + on + '" onclick="pickOpt(\'' + L + '\')">' + esc(o) + '</button>';
+        return '<button class="opt' + on + '" onclick="pickOpt(\'' + L + '\')">' + esc(optLabel(o)) + '</button>';
       }).join('') + '</div>';
   }
 
@@ -239,13 +241,13 @@ function renderReveal(){
   } else {
     var idx = ['A','B','C','D'].indexOf(String(r.answer));
     answerBlock = '<div class="answer" style="font-size:26px">' +
-      esc(q && q.options[idx] ? q.options[idx] : r.answer) + '</div>';
+      esc(q && q.options[idx] ? optLabel(q.options[idx]) : r.answer) + '</div>';
   }
 
   var mineRow = null;
   var rows = r.rows.map(function(row){
     var val = numeric ? num(row.val)
-      : (q && q.options[['A','B','C','D'].indexOf(row.val)]) || row.val;
+      : optLabel((q && q.options[['A','B','C','D'].indexOf(row.val)]) || row.val);
     var isMe = V.me && row.name === V.me.name;
     if (isMe) mineRow = row;
     return '<li class="' + (row.points ? '' : 'zero') + '">' +

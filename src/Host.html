@@ -169,7 +169,8 @@ function answerText(){
   if (!r) return '';
   if (q && q.type === 'number') return r.answer + ' ' + (r.unit || '');
   var i = ['A','B','C','D'].indexOf(String(r.answer));
-  return (q && q.options[i]) || r.answer;
+  var label = (q && q.options[i]) || r.answer;
+  return /^\d{4,}$/.test(String(label)) ? Number(label).toLocaleString('en-IN') : label;
 }
 
 function b2045Control(){

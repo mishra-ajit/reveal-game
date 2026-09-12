@@ -19,6 +19,9 @@ function START_HERE() {
 var STATE_KEY = 'STATE_V1';
 var PIN_KEY   = 'HOST_PIN';
 var SHEET_KEY = 'SHEET_ID';
+/** The link guests get. Change it here if you move the static front-end. */
+var PLAYER_URL = 'https://mishra-ajit.github.io/reveal-game/';
+
 var BUDGET    = 100;   // points each team allocates in Baby 2045
 var MOVE_CAP  = 20;    // points a team may move after the scenario is revealed
 
@@ -26,8 +29,50 @@ var MOVE_CAP  = 20;    // points a team may move after the scenario is revealed
 
 function doGet(e) {
   var p = (e && e.parameter) || {};
+  if (p.api) return apiRouter_(p);
   if (p.host && p.host === hostPin_()) return page_('Host', 'Reveal · Host', p.host);
   return page_('Index', 'Reveal');
+}
+
+/**
+ * JSON endpoint for the static front-end on GitHub Pages.
+ *
+ * Why this exists: opening the Apps Script page directly fails for anyone whose
+ * browser has a Workspace account signed in — Google resolves the request under
+ * that account and many domains block third-party web apps. Fetched as data
+ * instead, with no cookies, the request is anonymous and always succeeds.
+ *
+ * Answers JSONP when a `callback` is given, plain JSON otherwise, so the client
+ * can use whichever survives the browser it happens to be running in.
+ */
+function apiRouter_(p) {
+  var out;
+  try {
+    out = { ok: true, data: dispatch_(p) };
+  } catch (err) {
+    out = { ok: false, error: String((err && err.message) || err) };
+  }
+  var body = JSON.stringify(out);
+  if (p.callback && /^[A-Za-z_$][\w$]*$/.test(p.callback)) {
+    return ContentService.createTextOutput(p.callback + '(' + body + ')')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(body)
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function dispatch_(p) {
+  var json = function (s) { return s ? JSON.parse(s) : {}; };
+  switch (p.api) {
+    case 'poll':      return apiPoll(p.pid);
+    case 'join':      return apiJoin(p.name, p.team);
+    case 'answer':    return apiAnswer(p.pid, p.val);
+    case 'setAlloc':  return apiSetAlloc(p.pid, json(p.alloc));
+    case 'lockAlloc': return apiLockAlloc(p.pid);
+    case 'hostPoll':  return apiHostPoll(p.pin);
+    case 'host':      return apiHost(p.pin, p.action, json(p.payload));
+  }
+  throw new Error('unknown api: ' + p.api);
 }
 
 function page_(file, title, pin) {
@@ -467,7 +512,9 @@ function hostView_(st) {
   v.qualities = c.qualities;
   v.budget = BUDGET;
   v.counts = { numbers: c.numbers.length, trivia: c.trivia.length };
-  try { v.playerUrl = ScriptApp.getService().getUrl(); } catch (e) { v.playerUrl = ''; }
+  // The short GitHub Pages link is the one to hand out: it works in every
+  // browser, including ones signed into a Workspace account.
+  v.playerUrl = PLAYER_URL;
   if (st.round === 2) {
     v.b2045.alloc = st.b2045.alloc;   // host always sees both sides
     v.b2045.scenario = st.b2045.scenario >= 0 ? c.scenarios[st.b2045.scenario] : null;
