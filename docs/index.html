@@ -1,28 +1,736 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Reveal</title>
-<!--
-  Short link for players. It forwards straight to the Apps Script web app.
-  If you ever redeploy and the /exec URL changes, edit APP below — nothing
-  else on this page needs touching.
--->
-<link rel="canonical" href="https://script.google.com/macros/s/AKfycbx2Z30xc4WAF2U8pXcB-diwbd8WNiDC4eyqI-PkIplTH99t4fsjhbPzX8UiktRE2Cdk8w/exec">
-<style>
-  html,body{height:100%;margin:0}
-  body{display:grid;place-items:center;background:#FAFAFA;color:#78909C;
-       font:500 15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-  a{color:#1E88E5}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Reveal</title>
+  <style>
+  /* Material Design palette — Blue 600 / Pink 600 on Blue Grey neutrals */
+  :root{
+    --bg:#FAFAFA; --card:#FFFFFF; --ink:#263238; --sub:#78909C; --line:#ECEFF1;
+    --blue:#1E88E5; --blue-soft:#E3F2FD; --blue-deep:#1565C0;
+    --pink:#D81B60; --pink-soft:#FCE4EC; --pink-deep:#AD1457;
+    --ok:#00897B; --slate:#37474F;
+    --radius:18px;
+    --shadow:0 1px 2px rgba(38,50,56,.06), 0 6px 20px rgba(38,50,56,.07);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg)}
+  body{
+    font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--ink); -webkit-font-smoothing:antialiased;
+    padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 8px);
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:14px 16px 28px}
+  .wide{max-width:760px}
+  h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
+  h1{font-size:30px}
+  h2{font-size:22px}
+  p{margin:0}
+  .sub{color:var(--sub);font-size:14px}
+  .tiny{font-size:12px;color:var(--sub)}
+  .center{text-align:center}
+  .stack>*+*{margin-top:12px}
+  .stack-lg>*+*{margin-top:20px}
+  .hidden{display:none !important}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+        padding:18px;box-shadow:var(--shadow)}
+  .card.flat{box-shadow:none}
+
+  /* ---- scoreboard ---- */
+  .board{display:flex;gap:10px;margin-bottom:14px}
+  .board .side{flex:1;border-radius:14px;padding:10px 14px;display:flex;
+               align-items:baseline;justify-content:space-between}
+  .board .blue{background:var(--blue-soft);color:var(--blue)}
+  .board .pink{background:var(--pink-soft);color:var(--pink)}
+  .board .label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .board .num{font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+
+  /* ---- buttons ---- */
+  button{font:inherit;cursor:pointer}
+  .btn{display:block;width:100%;border:0;border-radius:14px;padding:16px;
+       font-size:17px;font-weight:600;background:var(--slate);color:#fff;
+       transition:transform .08s ease,opacity .15s ease}
+  .btn:active{transform:scale(.985)}
+  .btn[disabled]{opacity:.4;pointer-events:none}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .btn.blue{background:var(--blue)}
+  .btn.pink{background:var(--pink)}
+  .btn.sm{padding:10px 14px;font-size:14px;width:auto;border-radius:11px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row>.btn{width:auto;flex:1}
+
+  /* ---- team pick ---- */
+  .teams{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .team{border:2px solid var(--line);background:#fff;border-radius:var(--radius);
+        padding:22px 12px;text-align:center;font-weight:700;font-size:17px;color:var(--ink);
+        transition:border-color .15s ease,background .15s ease,transform .08s ease}
+  .team:active{transform:scale(.98)}
+  .team .dot{display:block;width:34px;height:34px;border-radius:50%;margin:0 auto 10px}
+  .team.b .dot{background:var(--blue)} .team.p .dot{background:var(--pink)}
+  .team.b.on{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
+  .team.p.on{border-color:var(--pink);background:var(--pink-soft);color:var(--pink)}
+
+  input[type=text],input[type=number],input[type=tel]{
+    width:100%;padding:16px;border:1px solid var(--line);border-radius:14px;
+    font:inherit;font-size:17px;background:#fff;color:var(--ink);outline:none}
+  input:focus{border-color:var(--ink)}
+  input[type=number]{font-size:26px;font-weight:700;text-align:center;
+                     font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+
+  /* ---- roster ---- */
+  .roster{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .roster h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+  .roster .b h3{color:var(--blue)} .roster .p h3{color:var(--pink)}
+  .roster ul{list-style:none;margin:0;padding:0}
+  .roster li{padding:5px 0;font-size:15px;display:flex;justify-content:space-between;gap:6px}
+  .roster li span{color:var(--sub);font-variant-numeric:tabular-nums;font-size:13px}
+  .roster li.me{font-weight:700}
+
+  /* ---- question ---- */
+  .qmeta{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sub)}
+  .qtext{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.25;margin-top:6px}
+  .qimg{width:100%;border-radius:14px;margin-top:14px;display:block;background:#ECEFF1;
+        aspect-ratio:16/10;object-fit:cover}
+  .opts{display:grid;gap:10px;margin-top:16px}
+  .opt{text-align:left;border:1px solid var(--line);background:#fff;border-radius:14px;
+       padding:15px 16px;font-size:16px;font-weight:500;color:var(--ink);width:100%;
+       transition:border-color .15s,background .15s,transform .08s}
+  .opt:active{transform:scale(.99)}
+  .opt.on{border-color:var(--blue);background:var(--blue-soft);font-weight:700}
+  .opt.right{border-color:var(--ok);background:#E0F2F1;font-weight:700}
+  .opt.wrong{border-color:var(--pink);background:var(--pink-soft)}
+  .opts.grid{grid-template-columns:1fr 1fr}
+  .opt.img{padding:0;overflow:hidden}
+  .opt.img img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#ECEFF1}
+  .opt.img .cap{display:block;padding:10px 12px;font-size:14px}
+
+  /* ---- reveal ---- */
+  .answer{font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1;
+          font-variant-numeric:tabular-nums}
+  .answer small{display:block;font-size:13px;font-weight:600;color:var(--sub);
+                letter-spacing:.02em;margin-top:6px}
+  .guesses{list-style:none;margin:14px 0 0;padding:0}
+  .guesses li{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);
+              font-size:15px}
+  .guesses li:first-child{border-top:0}
+  .pip{width:8px;height:8px;border-radius:50%;flex:none}
+  .pip.blue{background:var(--blue)} .pip.pink{background:var(--pink)}
+  .guesses .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .guesses .gv{font-variant-numeric:tabular-nums;color:var(--sub)}
+  .guesses .pt{font-weight:700;font-size:13px;color:var(--ok);min-width:30px;text-align:right}
+  .guesses li.zero .pt{color:var(--line)}
+  .note{margin-top:14px;padding:12px 14px;background:#F5F7F8;border-radius:12px;
+        font-size:14px;color:var(--sub);line-height:1.5}
+
+  /* ---- 2045 allocator ---- */
+  .alloc{list-style:none;margin:0;padding:0}
+  .alloc li{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+  .alloc li:first-child{border-top:0}
+  .alloc .nm{flex:1;font-size:15px;font-weight:500}
+  .alloc .val{width:42px;text-align:center;font-weight:800;font-size:19px;
+              font-variant-numeric:tabular-nums}
+  .step{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:#fff;
+        font-size:19px;font-weight:600;color:var(--ink);line-height:1;flex:none}
+  .step:active{background:#ECEFF1}
+  .step[disabled]{opacity:.3}
+  .budget{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);
+          margin:14px -18px -18px;padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+          border-radius:0 0 var(--radius) var(--radius)}
+  .budget .n{font-weight:800;font-variant-numeric:tabular-nums}
+  .budget .n.over{color:var(--pink)} .budget .n.zero{color:var(--ok)}
+
+  .compare{display:grid;grid-template-columns:1fr auto 1fr;gap:6px 10px;align-items:center;
+           font-variant-numeric:tabular-nums}
+  .compare .h{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+              padding-bottom:6px}
+  .compare .h.b{color:var(--blue);text-align:right} .compare .h.p{color:var(--pink)}
+  .compare .lbl{font-size:13px;color:var(--sub);text-align:center;white-space:nowrap}
+  .bar{height:26px;border-radius:7px;display:flex;align-items:center;font-size:13px;
+       font-weight:700;padding:0 7px;color:#fff;min-width:22px}
+  .bar.b{background:var(--blue);justify-content:flex-end;margin-left:auto}
+  .bar.p{background:var(--pink)}
+  .bar.o{background:#ECEFF1;color:var(--sub)}
+
+  .scen{border-radius:14px;padding:18px;background:var(--slate);color:#fff}
+  .scen h2{font-size:20px;margin-bottom:8px}
+  .scen p{font-size:15px;opacity:.82;line-height:1.5}
+
+  .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;
+        font-weight:700;letter-spacing:.02em}
+  .pill.blue{background:var(--blue-soft);color:var(--blue)}
+  .pill.pink{background:var(--pink-soft);color:var(--pink)}
+  .pill.grey{background:#ECEFF1;color:var(--sub)}
+  .pill.ok{background:#E0F2F1;color:var(--ok)}
+
+  .wait{display:flex;align-items:center;gap:10px;color:var(--sub);font-size:14px}
+  .spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);
+        border-top-color:var(--sub);animation:sp .8s linear infinite;flex:none}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .fade{animation:fd .22s ease}
+  @keyframes fd{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+  .err{background:var(--pink-soft);color:var(--pink);border-radius:12px;padding:12px 14px;
+       font-size:14px;font-weight:500}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--slate);
+         color:#fff;padding:12px 18px;border-radius:999px;font-size:14px;font-weight:600;
+         box-shadow:var(--shadow);z-index:50;max-width:90vw}
+
+  /* ---- host extras ---- */
+  .hrow{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line)}
+  .hrow:first-child{border-top:0}
+  .hrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex:none}
+  .seg button{border:0;background:#fff;padding:7px 11px;font-size:13px;font-weight:600;color:var(--sub)}
+  .seg button.on.b{background:var(--blue);color:#fff}
+  .seg button.on.p{background:var(--pink);color:#fff}
+  .steps{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-bottom:14px}
+  .steps button{flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;
+                padding:8px 14px;font-size:13px;font-weight:600;color:var(--sub)}
+  .steps button.on{background:var(--slate);color:#fff;border-color:var(--slate)}
+  code{background:#ECEFF1;padding:2px 6px;border-radius:6px;font-size:13px}
 </style>
+
 </head>
 <body>
-<p>Opening the game…<br><a id="fallback" href="#">Tap here if nothing happens</a></p>
 <script>
-  var APP = 'https://script.google.com/macros/s/AKfycbx2Z30xc4WAF2U8pXcB-diwbd8WNiDC4eyqI-PkIplTH99t4fsjhbPzX8UiktRE2Cdk8w/exec';
-  document.getElementById('fallback').href = APP;
-  location.replace(APP);
+(function () {
+  var APP = "https://script.google.com/macros/s/AKfycbx2Z30xc4WAF2U8pXcB-diwbd8WNiDC4eyqI-PkIplTH99t4fsjhbPzX8UiktRE2Cdk8w/exec";
+
+  // Argument order per server function, so a call reads the same on both sides.
+  var SIG = {
+    apiPoll:      ['poll',      ['pid']],
+    apiJoin:      ['join',      ['name', 'team']],
+    apiAnswer:    ['answer',    ['pid', 'val']],
+    apiSetAlloc:  ['setAlloc',  ['pid', 'alloc']],
+    apiLockAlloc: ['lockAlloc', ['pid']],
+    apiHostPoll:  ['hostPoll',  ['pin']],
+    apiHost:      ['host',      ['pin', 'action', 'payload']]
+  };
+
+  function url(fn, args) {
+    var sig = SIG[fn];
+    if (!sig) throw new Error('unknown call: ' + fn);
+    var q = ['api=' + sig[0]];
+    sig[1].forEach(function (name, i) {
+      var v = args[i];
+      if (v === undefined || v === null) return;
+      if (typeof v === 'object') v = JSON.stringify(v);
+      q.push(name + '=' + encodeURIComponent(v));
+    });
+    return APP + '?' + q.join('&');
+  }
+
+  // Same shape as Apps Script's own bridge, so the page code is unchanged.
+  function call(fn, args, ok, fail) {
+    fetch(url(fn, args), { method: 'GET', redirect: 'follow' })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (r && r.ok) { if (ok) ok(r.data); }
+        else if (fail) fail(new Error((r && r.error) || 'request failed'));
+      })
+      .catch(function (e) { if (fail) fail(e); });
+  }
+
+  function runner(ok, fail) {
+    var api = {
+      withSuccessHandler: function (f) { return runner(f, fail); },
+      withFailureHandler: function (f) { return runner(ok, f); }
+    };
+    Object.keys(SIG).forEach(function (fn) {
+      api[fn] = function () { call(fn, [].slice.call(arguments), ok, fail); };
+    });
+    return api;
+  }
+
+  window.google = { script: { run: runner(null, null) } };
+}());
+</script>
+
+<div class="wrap" id="app"></div>
+
+<script>
+/* ---------------------------------------------------------------- state */
+var PID  = null;
+var V    = null;      // latest server view
+var lastV = -1;       // last rendered version
+var draft = {};       // local, unsent answer / allocation
+var busy = false;
+
+try { PID = localStorage.getItem('reveal.pid') || null; } catch (e) {}
+
+/* ---------------------------------------------------------------- utils */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function num(n){ return Number(n).toLocaleString('en-IN'); }
+// Google Sheets turns "3,85,000" into a bare number on the way in.
+function optLabel(s){ return /^\d{4,}$/.test(String(s)) ? num(s) : String(s); }
+function teamName(t){ return t === 'pink' ? 'Pink' : 'Blue'; }
+
+function toast(msg){
+  var el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 2600);
+}
+
+function call(fn, args, onOk){
+  busy = true;
+  google.script.run
+    .withSuccessHandler(function(v){ busy = false; apply(v, true); if (onOk) onOk(v); })
+    .withFailureHandler(function(e){ busy = false; toast(e.message || 'Something went wrong'); render(); })
+    [fn].apply(null, args);
+}
+
+function apply(v, force){
+  V = v;
+  if (!force && v.v === lastV) return;
+  lastV = v.v;
+  // don't yank a keyboard away mid-type
+  var a = document.activeElement;
+  if (!force && a && a.tagName === 'INPUT') return;
+  render();
+}
+
+/* ---------------------------------------------------------------- poll */
+function poll(){
+  if (!PID || busy) return;
+  google.script.run.withSuccessHandler(function(v){
+    if (!v.me) { PID = null; try{ localStorage.removeItem('reveal.pid'); }catch(e){} lastV = -1; render(); return; }
+    apply(v);
+  }).withFailureHandler(function(){}).apiPoll(PID);
+}
+setInterval(poll, 2500);
+
+/* ---------------------------------------------------------------- join */
+var joinTeam = null;
+
+function renderJoin(){
+  return '' +
+  '<div class="center stack-lg fade" style="padding-top:34px">' +
+    '<div>' +
+      '<h1>Blue or Pink?</h1>' +
+      '<p class="sub" style="margin-top:8px">Pick a side, play a few rounds, settle it properly.</p>' +
+    '</div>' +
+    '<div class="teams">' +
+      '<button class="team b' + (joinTeam === 'blue' ? ' on' : '') + '" onclick="pickTeam(\'blue\')">' +
+        '<span class="dot"></span>Blue</button>' +
+      '<button class="team p' + (joinTeam === 'pink' ? ' on' : '') + '" onclick="pickTeam(\'pink\')">' +
+        '<span class="dot"></span>Pink</button>' +
+    '</div>' +
+    '<input type="text" id="nameIn" placeholder="Your first name" autocomplete="given-name" ' +
+      'maxlength="18" enterkeyhint="go" oninput="refreshJoinBtn()" ' +
+      'onkeydown="if(event.key===\'Enter\')doJoin()">' +
+    '<button class="btn" id="joinBtn" disabled onclick="doJoin()">Join the game</button>' +
+  '</div>';
+}
+
+function pickTeam(t){
+  joinTeam = t;
+  var n = $('nameIn') ? $('nameIn').value : '';
+  render();
+  if ($('nameIn')) { $('nameIn').value = n; if (!n) $('nameIn').focus(); }
+  refreshJoinBtn();
+}
+
+function refreshJoinBtn(){
+  var ok = joinTeam && $('nameIn') && $('nameIn').value.trim().length > 0;
+  if ($('joinBtn')) $('joinBtn').disabled = !ok;
+}
+
+function doJoin(){
+  var name = $('nameIn').value.trim();
+  if (!name || !joinTeam) return;
+  $('joinBtn').disabled = true;
+  $('joinBtn').textContent = 'Joining…';
+  busy = true;
+  google.script.run
+    .withSuccessHandler(function(r){
+      busy = false;
+      PID = r.pid;
+      try { localStorage.setItem('reveal.pid', PID); } catch (e) {}
+      apply(r.view, true);
+    })
+    .withFailureHandler(function(e){
+      busy = false; toast(e.message || 'Could not join'); render();
+    })
+    .apiJoin(name, joinTeam);
+}
+
+/* ---------------------------------------------------------------- parts */
+function board(){
+  return '<div class="board">' +
+    '<div class="side blue"><span class="label">Blue</span><span class="num">' + V.scores.blue + '</span></div>' +
+    '<div class="side pink"><span class="label">Pink</span><span class="num">' + V.scores.pink + '</span></div>' +
+  '</div>';
+}
+
+function roster(showScores){
+  function col(team, cls){
+    var list = V.players.filter(function(p){ return p.team === team; });
+    if (showScores) list.sort(function(a,b){ return b.score - a.score; });
+    return '<div class="' + cls + '"><h3>' + teamName(team) + ' · ' + list.length + '</h3><ul>' +
+      (list.length ? list.map(function(p){
+        return '<li class="' + (V.me && p.id === V.me.id ? 'me' : '') + '">' +
+          '<span style="color:inherit;font-size:15px">' + esc(p.name) + '</span>' +
+          (showScores ? '<span>' + p.score + '</span>' : '') + '</li>';
+      }).join('') : '<li><span style="font-size:14px">—</span></li>') +
+      '</ul></div>';
+  }
+  return '<div class="roster">' + col('blue','b') + col('pink','p') + '</div>';
+}
+
+function waiting(text){
+  return '<div class="wait"><span class="spin"></span>' + esc(text) + '</div>';
+}
+
+/* ---------------------------------------------------------------- lobby */
+function renderLobby(){
+  var t = V.me.team;
+  return board() +
+  '<div class="card stack fade">' +
+    '<div class="center">' +
+      '<span class="pill ' + t + '">You’re Team ' + teamName(t) + '</span>' +
+      '<h2 style="margin-top:12px">Hi ' + esc(V.me.name) + '</h2>' +
+      '<p class="sub" style="margin-top:6px">Three quick rounds. Keep this tab open — ' +
+        'questions appear here on their own.</p>' +
+    '</div>' +
+    '<div style="border-top:1px solid var(--line);padding-top:16px">' + roster(false) + '</div>' +
+    '<div class="center">' + waiting('Waiting for the host to start') + '</div>' +
+  '</div>' +
+  '<p class="tiny center" style="margin-top:14px">Wrong side? Ask the host to switch you.</p>';
+}
+
+/* ---------------------------------------------------------------- question */
+function renderQuestion(){
+  var q = V.q;
+  if (!q) return board() + '<div class="card">' + waiting('Loading question') + '</div>';
+
+  var mine = (draft.key === qKey()) ? draft.val : V.myAnswer;
+  var sent = V.myAnswer != null;
+  var head = '<div class="qmeta">' + (V.round === 1 ? 'Baby by the Numbers' : 'Visual Trivia') +
+             ' · ' + (V.qIndex + 1) + ' of ' + V.total + '</div>' +
+             '<div class="qtext">' + esc(q.question) + '</div>' +
+             (q.image ? '<img class="qimg" src="' + esc(q.image) + '" alt="">' : '');
+
+  var body = '';
+  if (q.type === 'number'){
+    body =
+      '<div style="margin-top:18px">' +
+        '<input type="number" id="guess" inputmode="numeric" placeholder="0" ' +
+          'value="' + (mine != null ? esc(mine) : '') + '" ' +
+          'oninput="draft={key:qKey(),val:this.value}" ' +
+          'onkeydown="if(event.key===\'Enter\')sendAnswer()">' +
+        (q.unit ? '<p class="tiny center" style="margin-top:8px">' + esc(q.unit) + '</p>' : '') +
+      '</div>' +
+      '<button class="btn" style="margin-top:14px" onclick="sendAnswer()">' +
+        (sent ? 'Update my guess' : 'Lock in my guess') + '</button>';
+  } else {
+    var letters = ['A','B','C','D'];
+    var isImg = (q.type === 'image');
+    body = '<div class="opts' + (isImg ? ' grid' : '') + '">' +
+      q.options.map(function(o, i){
+        var L = letters[i];
+        var on = (mine === L) ? ' on' : '';
+        if (isImg){
+          return '<button class="opt img' + on + '" onclick="pickOpt(\'' + L + '\')">' +
+            '<img src="' + esc(q.images[i] || '') + '" alt=""><span class="cap">' + esc(o) + '</span></button>';
+        }
+        return '<button class="opt' + on + '" onclick="pickOpt(\'' + L + '\')">' + esc(optLabel(o)) + '</button>';
+      }).join('') + '</div>';
+  }
+
+  var foot = sent
+    ? '<div class="center" style="margin-top:16px">' +
+        '<span class="pill ok">Answer in</span>' +
+        '<p class="tiny" style="margin-top:8px">' + V.answeredCount + ' of ' + V.players.length +
+        ' answered · waiting for the reveal</p></div>'
+    : '<p class="tiny center" style="margin-top:16px">' + V.answeredCount + ' of ' +
+      V.players.length + ' answered</p>';
+
+  return board() + '<div class="card fade">' + head + body + foot + '</div>';
+}
+
+function qKey(){ return V.round + ':' + V.qIndex; }
+
+function pickOpt(L){
+  draft = { key: qKey(), val: L };
+  render();
+  call('apiAnswer', [PID, L]);
+}
+
+function sendAnswer(){
+  var el = $('guess');
+  if (!el || el.value === '') { toast('Type a number first'); return; }
+  draft = { key: qKey(), val: el.value };
+  el.blur();
+  call('apiAnswer', [PID, el.value]);
+}
+
+/* ---------------------------------------------------------------- reveal */
+function renderReveal(){
+  var q = V.q, r = V.reveal;
+  if (!r) return board() + '<div class="card">' + waiting('Revealing') + '</div>';
+
+  var numeric = (q && q.type === 'number');
+  var answerBlock;
+
+  if (numeric){
+    answerBlock = '<div class="answer">' + num(r.answer) +
+      (r.unit ? '<small>' + esc(r.unit) + '</small>' : '') + '</div>';
+  } else {
+    var idx = ['A','B','C','D'].indexOf(String(r.answer));
+    answerBlock = '<div class="answer" style="font-size:26px">' +
+      esc(q && q.options[idx] ? optLabel(q.options[idx]) : r.answer) + '</div>';
+  }
+
+  var mineRow = null;
+  var rows = r.rows.map(function(row){
+    var val = numeric ? num(row.val)
+      : optLabel((q && q.options[['A','B','C','D'].indexOf(row.val)]) || row.val);
+    var isMe = V.me && row.name === V.me.name;
+    if (isMe) mineRow = row;
+    return '<li class="' + (row.points ? '' : 'zero') + '">' +
+      '<span class="pip ' + row.team + '"></span>' +
+      '<span class="nm"' + (isMe ? ' style="font-weight:700"' : '') + '>' + esc(row.name) + '</span>' +
+      '<span class="gv">' + esc(val) + '</span>' +
+      '<span class="pt">' + (row.points ? '+' + row.points : '·') + '</span></li>';
+  }).join('');
+
+  var top = r.rows.filter(function(x){ return x.points === Math.max.apply(null,
+              r.rows.map(function(y){ return y.points; }).concat([0])) && x.points > 0; });
+
+  return board() +
+  '<div class="card fade">' +
+    '<div class="qmeta">Answer</div>' +
+    '<div class="qtext" style="font-size:17px;font-weight:600;color:var(--sub);margin-bottom:14px">' +
+      esc(q ? q.question : '') + '</div>' +
+    answerBlock +
+    (top.length ? '<p class="sub" style="margin-top:12px">' +
+      (numeric ? 'Closest' : 'Correct') + ': <b style="color:var(--ink)">' +
+      top.map(function(x){ return esc(x.name); }).join(', ') + '</b></p>' : '') +
+    (r.rows.length ? '<ul class="guesses">' + rows + '</ul>'
+                   : '<p class="sub" style="margin-top:14px">Nobody answered this one.</p>') +
+    (r.explanation ? '<div class="note">' + esc(r.explanation) + '</div>' : '') +
+    '<div class="center" style="margin-top:16px">' + waiting('Next question shortly') + '</div>' +
+  '</div>';
+}
+
+/* ---------------------------------------------------------------- baby 2045 */
+function renderB2045(){
+  var b = V.b2045, me = V.me, team = me.team;
+  var isCaptain = b.captain[team] === me.id;
+  var mine = b.alloc[team] || {};
+
+  if (draft.key !== 'b2045') { draft = { key: 'b2045', alloc: copyAlloc(mine) }; }
+  else if (!isCaptain) { draft.alloc = copyAlloc(mine); }
+
+  var head =
+    '<div class="card flat" style="background:var(--slate);color:#fff;border:0">' +
+      '<div class="qmeta" style="color:rgba(255,255,255,.55)">Round 2</div>' +
+      '<h2 style="margin-top:6px">Baby 2045</h2>' +
+      '<p style="font-size:15px;opacity:.8;margin-top:8px;line-height:1.5">' +
+        'It’s 2045. Your job is to prepare today’s baby for the world they grow up in. ' +
+        'Spend ' + V.budget + ' points across ten qualities.</p>' +
+    '</div>';
+
+  if (b.phase === 'compare' || b.phase === 'judged') return board() + head + renderCompare(b);
+
+  var scen = b.scenario
+    ? '<div class="scen fade"><div class="qmeta" style="color:rgba(255,255,255,.55)">The 2045 scenario</div>' +
+      '<h2 style="margin-top:6px">' + esc(b.scenario.title) + '</h2><p>' + esc(b.scenario.text) + '</p>' +
+      '<p style="margin-top:12px;font-size:13px;opacity:.7">You may move up to ' + V.moveCap +
+      ' points.</p></div>'
+    : '';
+
+  if (b.locked[team]){
+    return board() + head + scen +
+      '<div class="card center stack fade">' +
+        '<span class="pill ok">' + teamName(team) + ' locked in</span>' +
+        summaryList(mine) +
+        waiting(b.locked.blue && b.locked.pink ? 'Both teams in — waiting for the host'
+                                               : 'Waiting for the other team') +
+      '</div>';
+  }
+
+  if (!isCaptain){
+    var cap = V.players.filter(function(p){ return p.id === b.captain[team]; })[0];
+    return board() + head + scen +
+      '<div class="card stack fade">' +
+        '<p class="sub center">' + (cap ? '<b style="color:var(--ink)">' + esc(cap.name) + '</b> is your captain. '
+          : '') + 'Shout your opinions — this updates live.</p>' +
+        allocReadOnly(mine) +
+      '</div>';
+  }
+
+  return board() + head + scen + allocEditor();
+}
+
+function copyAlloc(a){
+  var out = {};
+  V.qualities.forEach(function(q){ out[q.key] = Number((a || {})[q.key]) || 0; });
+  return out;
+}
+
+function allocTotal(){
+  return V.qualities.reduce(function(s, q){ return s + (draft.alloc[q.key] || 0); }, 0);
+}
+
+function allocEditor(){
+  var total = allocTotal(), left = V.budget - total;
+  var b = V.b2045, team = V.me.team;
+  var base = (b.phase === 'adjust' && b.base && b.base[team]) ? b.base[team] : null;
+  var movedPts = base ? V.qualities.reduce(function(s, q){
+    var d = (draft.alloc[q.key] || 0) - (Number(base[q.key]) || 0);
+    return s + (d > 0 ? d : 0);
+  }, 0) : 0;
+
+  var rows = V.qualities.map(function(q){
+    var val = draft.alloc[q.key] || 0;
+    return '<li>' +
+      '<button class="step" onclick="bump(\'' + q.key + '\',-5)"' + (val <= 0 ? ' disabled' : '') + '>−</button>' +
+      '<span class="val">' + val + '</span>' +
+      '<button class="step" onclick="bump(\'' + q.key + '\',5)"' + (left <= 0 ? ' disabled' : '') + '>+</button>' +
+      '<span class="nm">' + esc(q.label) + '</span>' +
+    '</li>';
+  }).join('');
+
+  var overMove = base && movedPts > V.moveCap;
+  var ok = (left === 0) && !overMove;
+
+  return '<div class="card fade">' +
+    '<p class="tiny" style="margin-bottom:10px">You’re captain. Steps of 5.</p>' +
+    '<ul class="alloc">' + rows + '</ul>' +
+    '<div class="budget">' +
+      '<div class="row" style="align-items:center;justify-content:space-between;margin-bottom:10px">' +
+        '<span class="sub">Remaining</span>' +
+        '<span class="n ' + (left === 0 ? 'zero' : left < 0 ? 'over' : '') + '" style="font-size:22px">' +
+          left + '</span>' +
+      '</div>' +
+      (base ? '<p class="tiny" style="margin-bottom:10px' + (overMove ? ';color:var(--pink)' : '') + '">Moved ' +
+        movedPts + ' of ' + V.moveCap + ' allowed points</p>' : '') +
+      '<button class="btn" ' + (ok ? '' : 'disabled ') + 'onclick="lockAlloc()">' +
+        (ok ? 'Submit for Team ' + teamName(team) : (left > 0 ? left + ' points left to spend'
+              : overMove ? 'Too many points moved' : (-left) + ' points over')) +
+      '</button>' +
+    '</div>' +
+  '</div>';
+}
+
+var saveTimer = null;
+function bump(key, d){
+  var left = V.budget - allocTotal();
+  if (d > 0) d = Math.min(d, left);
+  var next = Math.max(0, (draft.alloc[key] || 0) + d);
+  draft.alloc[key] = next;
+  render();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function(){
+    google.script.run.withFailureHandler(function(){}).apiSetAlloc(PID, draft.alloc);
+  }, 600);
+}
+
+function lockAlloc(){
+  clearTimeout(saveTimer);
+  busy = true;
+  google.script.run
+    .withSuccessHandler(function(){
+      google.script.run.withSuccessHandler(function(v){ busy = false; apply(v, true); })
+        .withFailureHandler(function(){ busy = false; }).apiLockAlloc(PID);
+    })
+    .withFailureHandler(function(e){ busy = false; toast(e.message || 'Could not save'); })
+    .apiSetAlloc(PID, draft.alloc);
+}
+
+function allocReadOnly(a){
+  return '<ul class="alloc">' + V.qualities.map(function(q){
+    return '<li><span class="val">' + (Number(a[q.key]) || 0) + '</span>' +
+           '<span class="nm">' + esc(q.label) + '</span></li>';
+  }).join('') + '</ul>';
+}
+
+function summaryList(a){
+  var picks = V.qualities.map(function(q){ return { l: q.label, v: Number(a[q.key]) || 0 }; })
+    .filter(function(x){ return x.v > 0; }).sort(function(x,y){ return y.v - x.v; });
+  return '<p class="sub" style="line-height:1.7">' + picks.map(function(p){
+    return esc(p.l) + ' <b style="color:var(--ink)">' + p.v + '</b>';
+  }).join(' · ') + '</p>';
+}
+
+function renderCompare(b){
+  var rows = V.qualities.map(function(q){
+    var bl = Number((b.alloc.blue || {})[q.key]) || 0;
+    var pk = Number((b.alloc.pink || {})[q.key]) || 0;
+    var w = function(n){ return Math.max(6, n * 2.2); };
+    return '<div class="bar ' + (bl ? 'b' : 'o b') + '" style="width:' + w(bl) + '%">' + (bl || '') + '</div>' +
+           '<div class="lbl">' + esc(q.label) + '</div>' +
+           '<div class="bar ' + (pk ? 'p' : 'o') + '" style="width:' + w(pk) + '%">' + (pk || '') + '</div>';
+  }).join('');
+
+  var verdict = '';
+  if (b.phase === 'judged'){
+    verdict = b.winner === 'draw'
+      ? '<div class="center" style="margin-top:18px"><span class="pill grey">It’s a draw</span></div>'
+      : '<div class="center" style="margin-top:18px"><span class="pill ' + b.winner + '">Team ' +
+        teamName(b.winner) + ' takes this round</span></div>';
+  } else {
+    verdict = '<div class="center" style="margin-top:18px">' + waiting('The couple are deciding') + '</div>';
+  }
+
+  return (b.scenario
+      ? '<div class="scen" style="margin-top:12px"><div class="qmeta" style="color:rgba(255,255,255,.55)">Scenario</div>' +
+        '<h2 style="margin-top:6px">' + esc(b.scenario.title) + '</h2><p>' + esc(b.scenario.text) + '</p></div>'
+      : '') +
+    '<div class="card fade" style="margin-top:12px">' +
+      '<div class="compare">' +
+        '<div class="h b">Blue</div><div></div><div class="h p">Pink</div>' + rows +
+      '</div>' + verdict +
+    '</div>';
+}
+
+/* ---------------------------------------------------------------- final */
+function renderFinal(){
+  var s = V.scores;
+  var win = s.blue === s.pink ? 'draw' : (s.blue > s.pink ? 'blue' : 'pink');
+  var headline = win === 'draw' ? 'It’s a tie' : 'Team ' + teamName(win) + ' wins';
+  return board() +
+    '<div class="card center stack-lg fade">' +
+      '<div>' +
+        '<h1 style="font-size:34px;color:' + (win === 'draw' ? 'var(--ink)' : 'var(--' + win + ')') + '">' +
+          headline + '</h1>' +
+        '<p class="sub" style="margin-top:10px">Bragging rights only. The actual reveal is happening ' +
+          'in the room, not on your phone.</p>' +
+      '</div>' +
+      '<div style="border-top:1px solid var(--line);padding-top:18px;text-align:left">' +
+        roster(true) + '</div>' +
+    '</div>';
+}
+
+/* ---------------------------------------------------------------- render */
+function render(){
+  var app = $('app');
+  if (!PID || !V || !V.me){ app.className = 'wrap'; app.innerHTML = renderJoin(); refreshJoinBtn(); return; }
+  app.className = 'wrap';
+
+  if (V.status === 'ended'){ app.innerHTML = renderFinal(); return; }
+  if (V.round === 2){ app.innerHTML = renderB2045(); return; }
+  if (V.round === 1 || V.round === 3){
+    app.innerHTML = (V.phase === 'reveal') ? renderReveal() : renderQuestion();
+    return;
+  }
+  app.innerHTML = renderLobby();
+}
+
+/* ---------------------------------------------------------------- boot */
+render();
+if (PID){
+  google.script.run.withSuccessHandler(function(v){
+    if (!v.me){ PID = null; try{ localStorage.removeItem('reveal.pid'); }catch(e){} }
+    apply(v, true);
+  }).withFailureHandler(function(){}).apiPoll(PID);
+}
 </script>
 </body>
 </html>
