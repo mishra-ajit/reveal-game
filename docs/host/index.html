@@ -1,48 +1,498 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Reveal · Host</title>
-<!--
-  Short link for the host. The PIN is deliberately NOT stored here — this page
-  is public, so anyone who guessed the URL would otherwise get host controls.
-  Enter it once; the browser remembers it for next time.
--->
-<style>
-  html,body{height:100%;margin:0}
-  body{display:grid;place-items:center;background:#FAFAFA;color:#263238;
-       font:500 15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-  .box{background:#fff;border-radius:18px;padding:26px 22px;width:min(320px,86vw);
-       box-shadow:0 1px 2px rgba(38,50,56,.06),0 6px 20px rgba(38,50,56,.07);text-align:center}
-  h1{font-size:19px;margin:0 0 4px}
-  p{color:#78909C;font-size:13px;margin:0 0 18px}
-  input{width:100%;box-sizing:border-box;font:600 20px/1 inherit;text-align:center;
-        letter-spacing:.3em;padding:14px;border:1px solid #ECEFF1;border-radius:12px;background:#FAFAFA}
-  button{width:100%;margin-top:12px;padding:14px;border:0;border-radius:12px;cursor:pointer;
-         background:#37474F;color:#fff;font:600 15px inherit}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Reveal · Host</title>
+  <style>
+  /* Material Design palette — Blue 600 / Pink 600 on Blue Grey neutrals */
+  :root{
+    --bg:#FAFAFA; --card:#FFFFFF; --ink:#263238; --sub:#78909C; --line:#ECEFF1;
+    --blue:#1E88E5; --blue-soft:#E3F2FD; --blue-deep:#1565C0;
+    --pink:#D81B60; --pink-soft:#FCE4EC; --pink-deep:#AD1457;
+    --ok:#00897B; --slate:#37474F;
+    --radius:18px;
+    --shadow:0 1px 2px rgba(38,50,56,.06), 0 6px 20px rgba(38,50,56,.07);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg)}
+  body{
+    font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--ink); -webkit-font-smoothing:antialiased;
+    padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 8px);
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:14px 16px 28px}
+  .wide{max-width:760px}
+  h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.02em}
+  h1{font-size:30px}
+  h2{font-size:22px}
+  p{margin:0}
+  .sub{color:var(--sub);font-size:14px}
+  .tiny{font-size:12px;color:var(--sub)}
+  .center{text-align:center}
+  .stack>*+*{margin-top:12px}
+  .stack-lg>*+*{margin-top:20px}
+  .hidden{display:none !important}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+        padding:18px;box-shadow:var(--shadow)}
+  .card.flat{box-shadow:none}
+
+  /* ---- scoreboard ---- */
+  .board{display:flex;gap:10px;margin-bottom:14px}
+  .board .side{flex:1;border-radius:14px;padding:10px 14px;display:flex;
+               align-items:baseline;justify-content:space-between}
+  .board .blue{background:var(--blue-soft);color:var(--blue)}
+  .board .pink{background:var(--pink-soft);color:var(--pink)}
+  .board .label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .board .num{font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+
+  /* ---- buttons ---- */
+  button{font:inherit;cursor:pointer}
+  .btn{display:block;width:100%;border:0;border-radius:14px;padding:16px;
+       font-size:17px;font-weight:600;background:var(--slate);color:#fff;
+       transition:transform .08s ease,opacity .15s ease}
+  .btn:active{transform:scale(.985)}
+  .btn[disabled]{opacity:.4;pointer-events:none}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .btn.blue{background:var(--blue)}
+  .btn.pink{background:var(--pink)}
+  .btn.sm{padding:10px 14px;font-size:14px;width:auto;border-radius:11px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row>.btn{width:auto;flex:1}
+
+  /* ---- team pick ---- */
+  .teams{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .team{border:2px solid var(--line);background:#fff;border-radius:var(--radius);
+        padding:22px 12px;text-align:center;font-weight:700;font-size:17px;color:var(--ink);
+        transition:border-color .15s ease,background .15s ease,transform .08s ease}
+  .team:active{transform:scale(.98)}
+  .team .dot{display:block;width:34px;height:34px;border-radius:50%;margin:0 auto 10px}
+  .team.b .dot{background:var(--blue)} .team.p .dot{background:var(--pink)}
+  .team.b.on{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
+  .team.p.on{border-color:var(--pink);background:var(--pink-soft);color:var(--pink)}
+
+  input[type=text],input[type=number],input[type=tel]{
+    width:100%;padding:16px;border:1px solid var(--line);border-radius:14px;
+    font:inherit;font-size:17px;background:#fff;color:var(--ink);outline:none}
+  input:focus{border-color:var(--ink)}
+  input[type=number]{font-size:26px;font-weight:700;text-align:center;
+                     font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+
+  /* ---- roster ---- */
+  .roster{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .roster h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+  .roster .b h3{color:var(--blue)} .roster .p h3{color:var(--pink)}
+  .roster ul{list-style:none;margin:0;padding:0}
+  .roster li{padding:5px 0;font-size:15px;display:flex;justify-content:space-between;gap:6px}
+  .roster li span{color:var(--sub);font-variant-numeric:tabular-nums;font-size:13px}
+  .roster li.me{font-weight:700}
+
+  /* ---- question ---- */
+  .qmeta{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sub)}
+  .qtext{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.25;margin-top:6px}
+  .qimg{width:100%;border-radius:14px;margin-top:14px;display:block;background:#ECEFF1;
+        aspect-ratio:16/10;object-fit:cover}
+  .opts{display:grid;gap:10px;margin-top:16px}
+  .opt{text-align:left;border:1px solid var(--line);background:#fff;border-radius:14px;
+       padding:15px 16px;font-size:16px;font-weight:500;color:var(--ink);width:100%;
+       transition:border-color .15s,background .15s,transform .08s}
+  .opt:active{transform:scale(.99)}
+  .opt.on{border-color:var(--blue);background:var(--blue-soft);font-weight:700}
+  .opt.right{border-color:var(--ok);background:#E0F2F1;font-weight:700}
+  .opt.wrong{border-color:var(--pink);background:var(--pink-soft)}
+  .opts.grid{grid-template-columns:1fr 1fr}
+  .opt.img{padding:0;overflow:hidden}
+  .opt.img img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#ECEFF1}
+  .opt.img .cap{display:block;padding:10px 12px;font-size:14px}
+
+  /* ---- reveal ---- */
+  .answer{font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1;
+          font-variant-numeric:tabular-nums}
+  .answer small{display:block;font-size:13px;font-weight:600;color:var(--sub);
+                letter-spacing:.02em;margin-top:6px}
+  .guesses{list-style:none;margin:14px 0 0;padding:0}
+  .guesses li{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);
+              font-size:15px}
+  .guesses li:first-child{border-top:0}
+  .pip{width:8px;height:8px;border-radius:50%;flex:none}
+  .pip.blue{background:var(--blue)} .pip.pink{background:var(--pink)}
+  .guesses .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .guesses .gv{font-variant-numeric:tabular-nums;color:var(--sub)}
+  .guesses .pt{font-weight:700;font-size:13px;color:var(--ok);min-width:30px;text-align:right}
+  .guesses li.zero .pt{color:var(--line)}
+  .note{margin-top:14px;padding:12px 14px;background:#F5F7F8;border-radius:12px;
+        font-size:14px;color:var(--sub);line-height:1.5}
+
+  /* ---- 2045 allocator ---- */
+  .alloc{list-style:none;margin:0;padding:0}
+  .alloc li{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+  .alloc li:first-child{border-top:0}
+  .alloc .nm{flex:1;font-size:15px;font-weight:500}
+  .alloc .val{width:42px;text-align:center;font-weight:800;font-size:19px;
+              font-variant-numeric:tabular-nums}
+  .step{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:#fff;
+        font-size:19px;font-weight:600;color:var(--ink);line-height:1;flex:none}
+  .step:active{background:#ECEFF1}
+  .step[disabled]{opacity:.3}
+  .budget{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);
+          margin:14px -18px -18px;padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+          border-radius:0 0 var(--radius) var(--radius)}
+  .budget .n{font-weight:800;font-variant-numeric:tabular-nums}
+  .budget .n.over{color:var(--pink)} .budget .n.zero{color:var(--ok)}
+
+  .compare{display:grid;grid-template-columns:1fr auto 1fr;gap:6px 10px;align-items:center;
+           font-variant-numeric:tabular-nums}
+  .compare .h{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+              padding-bottom:6px}
+  .compare .h.b{color:var(--blue);text-align:right} .compare .h.p{color:var(--pink)}
+  .compare .lbl{font-size:13px;color:var(--sub);text-align:center;white-space:nowrap}
+  .bar{height:26px;border-radius:7px;display:flex;align-items:center;font-size:13px;
+       font-weight:700;padding:0 7px;color:#fff;min-width:22px}
+  .bar.b{background:var(--blue);justify-content:flex-end;margin-left:auto}
+  .bar.p{background:var(--pink)}
+  .bar.o{background:#ECEFF1;color:var(--sub)}
+
+  .scen{border-radius:14px;padding:18px;background:var(--slate);color:#fff}
+  .scen h2{font-size:20px;margin-bottom:8px}
+  .scen p{font-size:15px;opacity:.82;line-height:1.5}
+
+  .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;
+        font-weight:700;letter-spacing:.02em}
+  .pill.blue{background:var(--blue-soft);color:var(--blue)}
+  .pill.pink{background:var(--pink-soft);color:var(--pink)}
+  .pill.grey{background:#ECEFF1;color:var(--sub)}
+  .pill.ok{background:#E0F2F1;color:var(--ok)}
+
+  .wait{display:flex;align-items:center;gap:10px;color:var(--sub);font-size:14px}
+  .spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);
+        border-top-color:var(--sub);animation:sp .8s linear infinite;flex:none}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .fade{animation:fd .22s ease}
+  @keyframes fd{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+  .err{background:var(--pink-soft);color:var(--pink);border-radius:12px;padding:12px 14px;
+       font-size:14px;font-weight:500}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--slate);
+         color:#fff;padding:12px 18px;border-radius:999px;font-size:14px;font-weight:600;
+         box-shadow:var(--shadow);z-index:50;max-width:90vw}
+
+  /* ---- host extras ---- */
+  .hrow{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--line)}
+  .hrow:first-child{border-top:0}
+  .hrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex:none}
+  .seg button{border:0;background:#fff;padding:7px 11px;font-size:13px;font-weight:600;color:var(--sub)}
+  .seg button.on.b{background:var(--blue);color:#fff}
+  .seg button.on.p{background:var(--pink);color:#fff}
+  .steps{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-bottom:14px}
+  .steps button{flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;
+                padding:8px 14px;font-size:13px;font-weight:600;color:var(--sub)}
+  .steps button.on{background:var(--slate);color:#fff;border-color:var(--slate)}
+  code{background:#ECEFF1;padding:2px 6px;border-radius:6px;font-size:13px}
 </style>
+
 </head>
 <body>
-<div class="box">
-  <h1>Host console</h1>
-  <p>Enter your host PIN</p>
-  <input id="pin" type="tel" inputmode="numeric" maxlength="8" placeholder="····" autofocus>
-  <button onclick="go()">Open</button>
-</div>
 <script>
-  var APP = 'https://script.google.com/macros/s/AKfycbx2Z30xc4WAF2U8pXcB-diwbd8WNiDC4eyqI-PkIplTH99t4fsjhbPzX8UiktRE2Cdk8w/exec';
-  var el = document.getElementById('pin');
-  try { el.value = localStorage.getItem('reveal.pin') || ''; } catch (e) {}
-  function go(){
-    var p = el.value.trim();
-    if (!p) { el.focus(); return; }
-    try { localStorage.setItem('reveal.pin', p); } catch (e) {}
-    location.href = APP + '?host=' + encodeURIComponent(p);
+(function () {
+  var APP = "https://script.google.com/macros/s/AKfycbx2Z30xc4WAF2U8pXcB-diwbd8WNiDC4eyqI-PkIplTH99t4fsjhbPzX8UiktRE2Cdk8w/exec";
+
+  // Argument order per server function, so a call reads the same on both sides.
+  var SIG = {
+    apiPoll:      ['poll',      ['pid']],
+    apiJoin:      ['join',      ['name', 'team']],
+    apiAnswer:    ['answer',    ['pid', 'val']],
+    apiSetAlloc:  ['setAlloc',  ['pid', 'alloc']],
+    apiLockAlloc: ['lockAlloc', ['pid']],
+    apiHostPoll:  ['hostPoll',  ['pin']],
+    apiHost:      ['host',      ['pin', 'action', 'payload']]
+  };
+
+  function url(fn, args) {
+    var sig = SIG[fn];
+    if (!sig) throw new Error('unknown call: ' + fn);
+    var q = ['api=' + sig[0]];
+    sig[1].forEach(function (name, i) {
+      var v = args[i];
+      if (v === undefined || v === null) return;
+      if (typeof v === 'object') v = JSON.stringify(v);
+      q.push(name + '=' + encodeURIComponent(v));
+    });
+    return APP + '?' + q.join('&');
   }
-  el.addEventListener('keydown', function(e){ if (e.key === 'Enter') go(); });
-  // A PIN we already know is a one-tap trip, not a form to fill in again.
-  if (el.value) go();
+
+  // Same shape as Apps Script's own bridge, so the page code is unchanged.
+  function call(fn, args, ok, fail) {
+    fetch(url(fn, args), { method: 'GET', redirect: 'follow' })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (r && r.ok) { if (ok) ok(r.data); }
+        else if (fail) fail(new Error((r && r.error) || 'request failed'));
+      })
+      .catch(function (e) { if (fail) fail(e); });
+  }
+
+  function runner(ok, fail) {
+    var api = {
+      withSuccessHandler: function (f) { return runner(f, fail); },
+      withFailureHandler: function (f) { return runner(ok, f); }
+    };
+    Object.keys(SIG).forEach(function (fn) {
+      api[fn] = function () { call(fn, [].slice.call(arguments), ok, fail); };
+    });
+    return api;
+  }
+
+  window.google = { script: { run: runner(null, null) } };
+}());
+</script>
+
+<div class="wrap wide" id="app"></div>
+
+<script>
+var PIN = null || null;
+var V = null, lastV = -1, busy = false;
+if (!PIN) { try { PIN = localStorage.getItem('reveal.pin') || null; } catch (e) {} }
+if (PIN) { try { localStorage.setItem('reveal.pin', PIN); } catch (e) {} }
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function teamName(t){ return t === 'pink' ? 'Pink' : 'Blue'; }
+function toast(msg){
+  var el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el); setTimeout(function(){ el.remove(); }, 2600);
+}
+
+function act(action, payload, confirmMsg){
+  if (confirmMsg && !window.confirm(confirmMsg)) return;
+  busy = true;
+  google.script.run
+    .withSuccessHandler(function(v){ busy = false; V = v; lastV = v.v; render(); })
+    .withFailureHandler(function(e){ busy = false; toast(e.message || 'Failed'); })
+    .apiHost(PIN, action, payload || {});
+}
+
+function poll(){
+  if (!PIN || busy) return;
+  google.script.run.withSuccessHandler(function(v){
+    V = v; if (v.v !== lastV) { lastV = v.v; render(); }
+  }).withFailureHandler(function(){}).apiHostPoll(PIN);
+}
+setInterval(poll, 2500);
+
+/* ---------------------------------------------------------------- PIN gate */
+function renderPin(){
+  return '<div class="card stack center" style="margin-top:40px">' +
+    '<h2>Host console</h2>' +
+    '<p class="sub">Enter your host PIN.</p>' +
+    '<input type="tel" id="pinIn" inputmode="numeric" placeholder="PIN" ' +
+      'onkeydown="if(event.key===\'Enter\')savePin()">' +
+    '<button class="btn" onclick="savePin()">Unlock</button>' +
+  '</div>';
+}
+function savePin(){
+  var p = $('pinIn').value.trim();
+  if (!p) return;
+  busy = true;
+  google.script.run
+    .withSuccessHandler(function(v){
+      busy = false; PIN = p; try{ localStorage.setItem('reveal.pin', p); }catch(e){}
+      V = v; lastV = v.v; render();
+    })
+    .withFailureHandler(function(e){ busy = false; toast(e.message || 'Wrong PIN'); })
+    .apiHostPoll(p);
+}
+
+/* ---------------------------------------------------------------- parts */
+function board(){
+  return '<div class="board">' +
+    '<div class="side blue"><span class="label">Blue</span><span class="num">' + V.scores.blue + '</span></div>' +
+    '<div class="side pink"><span class="label">Pink</span><span class="num">' + V.scores.pink + '</span></div>' +
+  '</div>';
+}
+
+function steps(){
+  var items = [
+    { r: 0, label: 'Lobby' },
+    { r: 1, label: '1 · Numbers' },
+    { r: 2, label: '2 · Baby 2045' },
+    { r: 3, label: '3 · Trivia' },
+    { r: 4, label: 'Finish' }
+  ];
+  return '<div class="steps">' + items.map(function(it){
+    var on = (V.round === it.r) ? ' on' : '';
+    var fn = it.r === 0 ? "act('backToLobby')"
+           : it.r === 4 ? "act('endGame')"
+           : "startRound(" + it.r + ")";
+    return '<button class="' + on.trim() + '" onclick="' + fn + '">' + it.label + '</button>';
+  }).join('') + '</div>';
+}
+
+/** Starting a round wipes that round's answers, so warn if it has any. */
+function startRound(r){
+  var used = (r === V.round && (V.answeredCount > 0 || (V.b2045Full && V.b2045Full.winner)));
+  act('startRound', {round: r},
+      used ? 'Restart this round? Its answers will be cleared. Scores already awarded stay.' : null);
+}
+
+function players(){
+  var rows = V.players.map(function(p){
+    var isCap = V.b2045Full && (V.b2045Full.captain.blue === p.id || V.b2045Full.captain.pink === p.id);
+    return '<div class="hrow">' +
+      '<span class="pip ' + p.team + '"></span>' +
+      '<span class="nm">' + esc(p.name) +
+        (isCap ? ' <span class="pill grey" style="font-size:10px;padding:2px 7px">captain</span>' : '') +
+      '</span>' +
+      (V.round === 1 || V.round === 3
+        ? '<span class="pill ' + (p.answered ? 'ok' : 'grey') + '" style="font-size:11px">' +
+          (p.answered ? 'in' : '—') + '</span>' : '') +
+      '<span class="tiny" style="min-width:26px;text-align:right;font-weight:700;color:var(--ink)">' +
+        p.score + '</span>' +
+      '<span class="seg">' +
+        '<button class="' + (p.team === 'blue' ? 'on b' : '') + '" ' +
+          'onclick="act(\'setTeam\',{pid:\'' + p.id + '\',team:\'blue\'})">B</button>' +
+        '<button class="' + (p.team === 'pink' ? 'on p' : '') + '" ' +
+          'onclick="act(\'setTeam\',{pid:\'' + p.id + '\',team:\'pink\'})">P</button>' +
+      '</span>' +
+      '<button class="step" style="width:30px;height:30px;font-size:15px" ' +
+        'onclick="act(\'award\',{pid:\'' + p.id + '\',points:1})" title="+1 point">+</button>' +
+      (V.round === 2 ? '<button class="btn ghost sm" onclick="act(\'setCaptain\',{pid:\'' + p.id + '\'})">cap</button>' : '') +
+      '<button class="btn ghost sm" style="color:var(--pink)" ' +
+        'onclick="act(\'removePlayer\',{pid:\'' + p.id + '\'},\'Remove ' + esc(p.name).replace(/'/g,'') + '?\')">×</button>' +
+    '</div>';
+  }).join('');
+  return '<div class="card">' +
+    '<div class="qmeta" style="margin-bottom:10px">Players · ' + V.players.length + '</div>' +
+    (rows || '<p class="sub">Nobody has joined yet. Share the player link.</p>') +
+  '</div>';
+}
+
+/* ---------------------------------------------------------------- round control */
+function roundControl(){
+  if (V.round === 1 || V.round === 3){
+    var q = V.q;
+    var answered = V.answeredCount, tot = V.players.length;
+    return '<div class="card stack">' +
+      '<div>' +
+        '<div class="qmeta">' + (V.round === 1 ? 'Baby by the Numbers' : 'Visual Trivia') +
+          ' · question ' + (V.qIndex + 1) + ' of ' + V.total + '</div>' +
+        '<div class="qtext" style="font-size:18px">' + esc(q ? q.question : '—') + '</div>' +
+        (V.phase === 'reveal' && V.reveal
+          ? '<p class="sub" style="margin-top:8px">Answer: <b style="color:var(--ink)">' +
+            esc(answerText()) + '</b></p>' : '') +
+      '</div>' +
+      '<p class="sub">' + answered + ' of ' + tot + ' answered' +
+        (answered < tot && tot ? ' — waiting on ' + esc(V.players.filter(function(p){ return !p.answered; })
+          .map(function(p){ return p.name; }).join(', ')) : '') + '</p>' +
+      '<div class="row">' +
+        '<button class="btn ghost" onclick="act(\'prev\')"' + (V.qIndex === 0 ? ' disabled' : '') + '>Back</button>' +
+        (V.phase === 'question'
+          ? '<button class="btn" onclick="act(\'reveal\')">Reveal answer</button>'
+          : '<button class="btn" onclick="act(\'next\')">' +
+            (V.qIndex + 1 >= V.total ? 'Round done' : 'Next question') + '</button>') +
+      '</div>' +
+    '</div>';
+  }
+  if (V.round === 2) return b2045Control();
+  if (V.round === 4) return '<div class="card center stack">' +
+      '<h2>Game over</h2><p class="sub">Final scores are on everyone’s screen.</p>' +
+      '<button class="btn ghost" onclick="act(\'backToLobby\')">Back to lobby</button></div>';
+  return '<div class="card stack">' +
+    '<h2>Lobby</h2>' +
+    '<p class="sub">Share the player link, wait for everyone, then start Round 1.</p>' +
+    '<button class="btn" onclick="act(\'startRound\',{round:1})">Start Round 1</button>' +
+  '</div>';
+}
+
+function answerText(){
+  var r = V.reveal, q = V.q;
+  if (!r) return '';
+  if (q && q.type === 'number') return r.answer + ' ' + (r.unit || '');
+  var i = ['A','B','C','D'].indexOf(String(r.answer));
+  var label = (q && q.options[i]) || r.answer;
+  return /^\d{4,}$/.test(String(label)) ? Number(label).toLocaleString('en-IN') : label;
+}
+
+function b2045Control(){
+  var b = V.b2045Full, alloc = b.alloc;
+  var sum = function(o){ return Object.keys(o || {}).reduce(function(a,k){ return a + (Number(o[k])||0); }, 0); };
+  var status = function(t){
+    return '<span class="pill ' + (b.locked[t] ? 'ok' : 'grey') + '">' + teamName(t) + ': ' +
+      (b.locked[t] ? 'locked' : sum(alloc[t]) + '/' + V.budget) + '</span>';
+  };
+
+  var main = '';
+  if (b.phase === 'allocate'){
+    main = '<p class="sub">Captains are allocating. Reveal the scenario once both are locked in.</p>' +
+      '<button class="btn" onclick="act(\'revealScenario\',{scenario:-1})">Reveal a random scenario</button>' +
+      '<div class="row">' + V.scenarios.map(function(t, i){
+        return '<button class="btn ghost sm" onclick="act(\'revealScenario\',{scenario:' + i + '})">' +
+          esc(t) + '</button>';
+      }).join('') + '</div>';
+  } else if (b.phase === 'adjust'){
+    main = '<p class="sub">Scenario is out: <b style="color:var(--ink)">' +
+      esc(V.b2045.scenario ? V.b2045.scenario.title : '') + '</b>. Teams may move ' + V.moveCap + ' points.</p>' +
+      '<button class="btn" onclick="act(\'closeAdjust\')">Lock both teams &amp; compare</button>';
+  } else if (b.phase === 'compare'){
+    main = '<p class="sub">Both strategies are on screen. Pick a winner.</p>' +
+      '<div class="row">' +
+        '<button class="btn blue" onclick="act(\'judge\',{winner:\'blue\'})">Blue wins</button>' +
+        '<button class="btn pink" onclick="act(\'judge\',{winner:\'pink\'})">Pink wins</button>' +
+        '<button class="btn ghost" onclick="act(\'judge\',{winner:\'draw\'})">Draw</button>' +
+      '</div>';
+  } else {
+    main = '<p class="sub">Round complete — ' +
+      (b.winner === 'draw' ? 'called a draw' : 'Team ' + teamName(b.winner) + ' took it') + '.</p>' +
+      '<button class="btn" onclick="act(\'startRound\',{round:3})">Start Round 3 · Trivia</button>';
+  }
+
+  var table = '<div class="compare" style="margin-top:14px">' +
+    '<div class="h b">Blue</div><div></div><div class="h p">Pink</div>' +
+    V.qualities.map(function(q){
+      var bl = Number((alloc.blue || {})[q.key]) || 0, pk = Number((alloc.pink || {})[q.key]) || 0;
+      var w = function(n){ return Math.max(6, n * 2.2); };
+      return '<div class="bar ' + (bl ? 'b' : 'o b') + '" style="width:' + w(bl) + '%">' + (bl || '') + '</div>' +
+             '<div class="lbl">' + esc(q.label) + '</div>' +
+             '<div class="bar ' + (pk ? 'p' : 'o') + '" style="width:' + w(pk) + '%">' + (pk || '') + '</div>';
+    }).join('') + '</div>';
+
+  return '<div class="card stack">' +
+    '<div><div class="qmeta">Round 2 · Baby 2045</div>' +
+     '<div class="row" style="margin-top:8px">' + status('blue') + status('pink') + '</div></div>' +
+    main + table +
+  '</div>';
+}
+
+/* ---------------------------------------------------------------- danger zone */
+function admin(){
+  return '<div class="card stack">' +
+    '<div class="qmeta">Admin</div>' +
+    '<div class="row">' +
+      '<button class="btn ghost sm" onclick="act(\'resetScores\',{},\'Reset all scores and answers? Players stay.\')">Reset scores</button>' +
+      '<button class="btn ghost sm" onclick="act(\'resetGame\',{keepPlayers:true},\'Full reset, keeping players?\')">Reset game</button>' +
+      '<button class="btn ghost sm" style="color:var(--pink)" onclick="act(\'resetGame\',{keepPlayers:false},\'Wipe everything including players?\')">Wipe everything</button>' +
+    '</div>' +
+    (V.playerUrl ? '<p class="tiny" style="word-break:break-all">Player link: <code>' +
+      esc(V.playerUrl) + '</code></p>' : '') +
+  '</div>';
+}
+
+/* ---------------------------------------------------------------- render */
+function render(){
+  var app = $('app');
+  if (!PIN || !V){ app.innerHTML = renderPin(); return; }
+  app.innerHTML = board() + steps() + roundControl() +
+                  '<div style="height:12px"></div>' + players() +
+                  '<div style="height:12px"></div>' + admin();
+}
+
+render();
+if (PIN){
+  google.script.run.withSuccessHandler(function(v){ V = v; lastV = v.v; render(); })
+    .withFailureHandler(function(){ PIN = null; render(); }).apiHostPoll(PIN);
+}
 </script>
 </body>
 </html>
