@@ -230,7 +230,7 @@ function renderReveal(){
   var q = V.q, r = V.reveal;
   if (!r) return board() + '<div class="card">' + waiting('Revealing') + '</div>';
 
-  var numeric = (V.round === 1) || (q && q.type === 'number');
+  var numeric = (q && q.type === 'number');
   var answerBlock;
 
   if (numeric){

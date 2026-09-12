@@ -167,7 +167,7 @@ function roundControl(){
 function answerText(){
   var r = V.reveal, q = V.q;
   if (!r) return '';
-  if (V.round === 1 || (q && q.type === 'number')) return r.answer + ' ' + (r.unit || '');
+  if (q && q.type === 'number') return r.answer + ' ' + (r.unit || '');
   var i = ['A','B','C','D'].indexOf(String(r.answer));
   return (q && q.options[i]) || r.answer;
 }

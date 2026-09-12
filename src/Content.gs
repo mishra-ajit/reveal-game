@@ -6,7 +6,7 @@
  * first filled with, and is also the fallback if the Sheet is missing.
  *
  * Sheet tabs + columns:
- *   Numbers    id | question | answer | unit | fact | source
+ *   Numbers    id | question | optA | optB | optC | optD | answer | fact | source
  *   Trivia     id | type | question | image | optA | optB | optC | optD |
  *              imgA | imgB | imgC | imgD | answer | explanation | source | unit
  *   Qualities  key | label | emoji
@@ -29,49 +29,57 @@ var SEED = {
   numbers: [
     { id: 'n1',
       question: 'Roughly how many babies are born worldwide every day?',
-      answer: 385000, unit: 'babies',
-      fact: 'That is about 267 every minute — four and a half every second.',
+      options: ['85,000', '385,000', '1.2 million', '4 million'],
+      answer: 'B',
+      fact: 'About 267 every minute — four and a half every second.',
       source: 'UNICEF, World Population Prospects' },
 
     { id: 'n2',
       question: 'How many bones does a newborn baby have?',
-      answer: 300, unit: 'bones',
+      options: ['100', '206', '300', '500'],
+      answer: 'C',
       fact: 'Adults have 206. Many of a baby’s bones start as cartilage and fuse together as they grow.',
       source: 'Cleveland Clinic / NHS' },
 
     { id: 'n3',
       question: 'Roughly how many nappies does a baby get through in its first year?',
-      answer: 2500, unit: 'nappies',
+      options: ['2,500', '4,000', '6,000', '9,000'],
+      answer: 'A',
       fact: 'Around 8–12 a day in the newborn months, settling to 5–6 later in the year.',
       source: 'NHS Start4Life' },
 
     { id: 'n4',
       question: 'How many hours a day does a newborn typically sleep?',
-      answer: 16, unit: 'hours',
-      fact: 'In stretches of 2–4 hours. The total is generous; the scheduling is not.',
+      options: ['11', '16', '19', '22'],
+      answer: 'B',
+      fact: 'In stretches of two to four hours. The total is generous; the scheduling is not.',
       source: 'American Academy of Pediatrics' },
 
     { id: 'n5',
       question: 'What percentage of babies actually arrive on their estimated due date?',
-      answer: 5, unit: '%',
-      fact: 'Only about 1 in 20. Most arrive in the two weeks either side of it.',
+      options: ['5%', '18%', '35%', '60%'],
+      answer: 'A',
+      fact: 'About 1 in 20. Most arrive in the two weeks either side of it.',
       source: 'Perinatal Institute / ACOG' },
 
     { id: 'n6',
-      question: 'What is the average birth weight of a full-term baby, in grams?',
-      answer: 3300, unit: 'grams',
-      fact: 'About 3.3 kg. Anything from 2.5 kg to 4.0 kg is considered a normal range.',
+      question: 'What is the average birth weight of a full-term baby?',
+      options: ['2.2 kg', '2.7 kg', '3.3 kg', '4.1 kg'],
+      answer: 'C',
+      fact: 'Anything from 2.5 kg to 4.0 kg is considered a normal range.',
       source: 'World Health Organization' },
 
     { id: 'n7',
       question: 'Roughly how many babies are born in India every day?',
-      answer: 63000, unit: 'babies',
+      options: ['63,000', '1,10,000', '2,40,000', '5,00,000'],
+      answer: 'A',
       fact: 'Around 23 million a year — more than any other country on earth.',
       source: 'UN World Population Prospects 2024' },
 
     { id: 'n8',
       question: 'How many times a minute does a newborn’s heart beat?',
-      answer: 130, unit: 'beats per minute',
+      options: ['60', '90', '130', '190'],
+      answer: 'C',
       fact: 'Normal range is 120–160. An adult at rest sits around 70.',
       source: 'American Heart Association' }
   ],
@@ -111,8 +119,8 @@ var SEED = {
     { id: 't4', type: 'mc',
       question: 'Which country records the most births every year?',
       image: IMG + 'world-map.png',
-      options: ['China', 'Nigeria', 'India', 'Indonesia'],
-      answer: 'C',
+      options: ['China', 'India', 'Nigeria', 'Indonesia'],
+      answer: 'B',
       explanation: 'India, at roughly 23 million a year. China now records under 10 million.',
       source: 'UN World Population Prospects 2024' },
 
@@ -132,11 +140,11 @@ var SEED = {
       explanation: 'Pampers launched in 1961. It took until the late 1970s for disposables to overtake cloth in most homes.',
       source: 'Procter & Gamble corporate history' },
 
-    { id: 't7', type: 'number',
+    { id: 't7', type: 'mc',
       question: 'Out of every 1,000 births worldwide, how many are twins?',
       image: IMG + 'twins.jpg',
-      unit: 'per 1,000 births',
-      answer: 12,
+      options: ['3', '12', '40', '90'],
+      answer: 'B',
       explanation: 'About 12 in 1,000 — roughly 1.6 million twins a year. The rate has risen by a third since the 1980s.',
       source: 'Monden, Pison & Smits, Human Reproduction, 2021' }
   ],
@@ -171,8 +179,15 @@ var SEED = {
 
 /* ---------------- Sheet <-> SEED plumbing ---------------- */
 
+/**
+ * Bump this whenever the shipped questions change shape. On the next load the
+ * Sheet is rewritten from SEED — which does discard hand edits, so bump it
+ * only for real content upgrades, not for tweaking a single question.
+ */
+var CONTENT_V = 2;
+
 var SHEET_TABS = {
-  Numbers:   ['id','question','answer','unit','fact','source'],
+  Numbers:   ['id','question','optA','optB','optC','optD','answer','fact','source'],
   Trivia:    ['id','type','question','image','optA','optB','optC','optD',
               'imgA','imgB','imgC','imgD','answer','explanation','source','unit'],
   Qualities: ['key','label','emoji'],
@@ -182,7 +197,9 @@ var SHEET_TABS = {
 function seedRows_(tab) {
   if (tab === 'Numbers') {
     return SEED.numbers.map(function (q) {
-      return [q.id, q.question, q.answer, q.unit, q.fact, q.source];
+      var o = q.options || [];
+      return [q.id, q.question, o[0] || '', o[1] || '', o[2] || '', o[3] || '',
+              q.answer, q.fact, q.source];
     });
   }
   if (tab === 'Trivia') {
@@ -206,10 +223,15 @@ function content() {
   if (cached) { try { return JSON.parse(cached); } catch (e) {} }
 
   var out = seedContent_();
-  var id = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('SHEET_ID');
   if (id) {
     try {
       var ss = SpreadsheetApp.openById(id);
+      if (String(props.getProperty('CONTENT_V') || '') !== String(CONTENT_V)) {
+        Object.keys(SHEET_TABS).forEach(function (tab) { writeTab_(ss, tab); });
+        props.setProperty('CONTENT_V', String(CONTENT_V));
+      }
       out = {
         numbers:   readTab_(ss, 'Numbers',   parseNumberRow_)   || out.numbers,
         trivia:    readTab_(ss, 'Trivia',    parseTriviaRow_)   || out.trivia,
@@ -224,16 +246,48 @@ function content() {
 
 function seedContent_() {
   return {
-    numbers: SEED.numbers.slice(),
+    // Round 1 rows are multiple choice unless someone strips the options out.
+    numbers: SEED.numbers.map(function (q) {
+      var o = q.options || [];
+      var copy = {}; Object.keys(q).forEach(function (k) { copy[k] = q[k]; });
+      copy.type = (o.length > 1) ? 'mc' : 'number';
+      return copy;
+    }),
     trivia: SEED.trivia.slice(),
     qualities: SEED.qualities.slice(),
     scenarios: SEED.scenarios.slice()
   };
 }
 
+/** Writes one tab's header and seed rows, replacing whatever was there. */
+function writeTab_(ss, name) {
+  var sh = ss.getSheetByName(name) || ss.insertSheet(name);
+  var headers = SHEET_TABS[name];
+  var rows = seedRows_(name);
+  sh.clear();
+  sh.getRange(1, 1, 1, headers.length).setValues([headers])
+    .setFontWeight('bold').setBackground('#f1f3f5');
+  if (rows.length) sh.getRange(2, 1, rows.length, headers.length).setValues(rows);
+  sh.setFrozenRows(1);
+  sh.autoResizeColumns(1, Math.min(headers.length, 4));
+  return sh;
+}
+
+/** True when the tab's header row still matches the schema this code expects. */
+function headersOk_(sh, name) {
+  var want = SHEET_TABS[name];
+  if (sh.getLastColumn() < want.length) return false;
+  var got = sh.getRange(1, 1, 1, want.length).getValues()[0];
+  return want.every(function (h, i) { return String(got[i]).trim() === h; });
+}
+
 function readTab_(ss, name, parse) {
   var sh = ss.getSheetByName(name);
-  if (!sh || sh.getLastRow() < 2) return null;
+  if (!sh) return null;
+  // An older Sheet from a previous version would be parsed into nonsense.
+  // Rewriting it from the seed is safer than serving broken questions.
+  if (!headersOk_(sh, name)) sh = writeTab_(ss, name);
+  if (sh.getLastRow() < 2) return null;
   var rows = sh.getRange(2, 1, sh.getLastRow() - 1, SHEET_TABS[name].length).getValues();
   var out = [];
   rows.forEach(function (r) {
@@ -245,8 +299,13 @@ function readTab_(ss, name, parse) {
 }
 
 function parseNumberRow_(r) {
-  return { id: String(r[0]), question: String(r[1]), answer: Number(r[2]),
-           unit: String(r[3] || ''), fact: String(r[4] || ''), source: String(r[5] || '') };
+  var opts = [r[2], r[3], r[4], r[5]].map(String).filter(function (s) { return s.trim() !== ''; });
+  // No options given? Treat the row as a free-entry number guess.
+  var isMc = opts.length > 1;
+  return { id: String(r[0]), question: String(r[1]),
+           type: isMc ? 'mc' : 'number', options: opts,
+           answer: isMc ? String(r[6]).trim().toUpperCase() : Number(r[6]),
+           fact: String(r[7] || ''), source: String(r[8] || '') };
 }
 
 function parseTriviaRow_(r) {

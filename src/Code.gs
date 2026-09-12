@@ -339,7 +339,7 @@ function doReveal_(st, c) {
   var answers = st.answers[key] || {};
   var rows = [];
 
-  var numeric = (st.round === 1) || (q.type === 'number');
+  var numeric = (q.type === 'number');   // free-entry rows still score by closeness
 
   if (numeric) {
     var correct = Number(q.answer);
@@ -418,7 +418,7 @@ function view_(st, pid) {
     if (q) {
       v.q = {
         id: q.id,
-        type: (st.round === 1) ? 'number' : q.type,
+        type: q.type || 'mc',
         question: q.question,
         image: q.image || '',
         options: q.options || [],
@@ -518,17 +518,8 @@ function setup() {
     props.setProperty(SHEET_KEY, ss.getId());
   }
 
-  Object.keys(SHEET_TABS).forEach(function (tab) {
-    var sh = ss.getSheetByName(tab) || ss.insertSheet(tab);
-    sh.clear();
-    var headers = SHEET_TABS[tab];
-    var rows = seedRows_(tab);
-    sh.getRange(1, 1, 1, headers.length).setValues([headers])
-      .setFontWeight('bold').setBackground('#f1f3f5');
-    if (rows.length) sh.getRange(2, 1, rows.length, headers.length).setValues(rows);
-    sh.setFrozenRows(1);
-    sh.autoResizeColumns(1, Math.min(headers.length, 4));
-  });
+  Object.keys(SHEET_TABS).forEach(function (tab) { writeTab_(ss, tab); });
+  props.setProperty('CONTENT_V', String(CONTENT_V));
 
   var def = ss.getSheetByName('Sheet1');
   if (def && ss.getSheets().length > 1) ss.deleteSheet(def);
