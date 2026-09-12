@@ -83,9 +83,16 @@ function steps(){
     var on = (V.round === it.r) ? ' on' : '';
     var fn = it.r === 0 ? "act('backToLobby')"
            : it.r === 4 ? "act('endGame')"
-           : "act('startRound',{round:" + it.r + "})";
+           : "startRound(" + it.r + ")";
     return '<button class="' + on.trim() + '" onclick="' + fn + '">' + it.label + '</button>';
   }).join('') + '</div>';
+}
+
+/** Starting a round wipes that round's answers, so warn if it has any. */
+function startRound(r){
+  var used = (r === V.round && (V.answeredCount > 0 || (V.b2045Full && V.b2045Full.winner)));
+  act('startRound', {round: r},
+      used ? 'Restart this round? Its answers will be cleared. Scores already awarded stay.' : null);
 }
 
 function players(){

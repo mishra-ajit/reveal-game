@@ -264,7 +264,8 @@ function renderReveal(){
     '<div class="qtext" style="font-size:17px;font-weight:600;color:var(--sub);margin-bottom:14px">' +
       esc(q ? q.question : '') + '</div>' +
     answerBlock +
-    (top.length ? '<p class="sub" style="margin-top:12px">Closest: <b style="color:var(--ink)">' +
+    (top.length ? '<p class="sub" style="margin-top:12px">' +
+      (numeric ? 'Closest' : 'Correct') + ': <b style="color:var(--ink)">' +
       top.map(function(x){ return esc(x.name); }).join(', ') + '</b></p>' : '') +
     (r.rows.length ? '<ul class="guesses">' + rows + '</ul>'
                    : '<p class="sub" style="margin-top:14px">Nobody answered this one.</p>') +

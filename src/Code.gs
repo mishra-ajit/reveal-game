@@ -7,6 +7,15 @@
  * Rounds:  0 lobby | 1 Baby by the Numbers | 2 Baby 2045 | 3 Visual Trivia | 4 final
  */
 
+/**
+ * ▶ START HERE — run this once from the editor.
+ * It is the function the Run button selects by default.
+ * Creates the content Sheet, authorises the script, prints your host PIN.
+ */
+function START_HERE() {
+  return setup();
+}
+
 var STATE_KEY = 'STATE_V1';
 var PIN_KEY   = 'HOST_PIN';
 var SHEET_KEY = 'SHEET_ID';
@@ -189,6 +198,7 @@ function apiHost(pin, action, payload) {
         st.round = Number(payload.round);
         st.qIndex = 0;
         st.phase = (st.round === 2) ? 'idle' : 'question';
+        clearRound_(st, st.round);       // a restarted round starts clean
         if (st.round === 2) assignCaptains_(st);
         break;
 
@@ -293,6 +303,16 @@ function apiHost(pin, action, payload) {
   });
 
   return hostView_(s);
+}
+
+/** Wipes answers and results for one round so it can be replayed cleanly. */
+function clearRound_(st, round) {
+  [st.answers, st.reveals].forEach(function (bag) {
+    Object.keys(bag).forEach(function (key) {
+      if (key.indexOf(round + ':') === 0) delete bag[key];
+    });
+  });
+  if (round === 2) st.b2045 = blankB2045_();
 }
 
 function assignCaptains_(st) {
