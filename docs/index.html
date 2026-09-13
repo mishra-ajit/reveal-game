@@ -168,6 +168,10 @@
   .spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);
         border-top-color:var(--sub);animation:sp .8s linear infinite;flex:none}
   @keyframes sp{to{transform:rotate(360deg)}}
+  .art{display:block;width:150px;height:96px;margin:0 auto 10px}
+  .couple{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+          color:var(--sub);margin:0 0 10px}
+
   .fade{animation:fd .22s ease}
   @keyframes fd{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 
@@ -273,6 +277,7 @@ function quiet(){ return Date.now() - lastTap > 1200; }
 
 /* ---------------------------------------------------------------- utils */
 function $(id){ return document.getElementById(id); }
+function qLabel(q){ return (q.emoji ? q.emoji + ' ' : '') + q.label; }
 function esc(s){ return String(s == null ? '' : s)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function num(n){ return Number(n).toLocaleString('en-IN'); }
@@ -324,10 +329,32 @@ setInterval(poll, 2500);
 /* ---------------------------------------------------------------- join */
 var joinTeam = SAVED.team;
 
+/* A small drawing of the two of them. Deliberately plain: two figures, one
+   bump, no faces to get wrong. Colours come from the theme, not the markup. */
+function coupleArt(){
+  return '' +
+  '<svg class="art" viewBox="0 0 150 96" role="img" aria-label="The parents-to-be">' +
+    '<ellipse cx="75" cy="88" rx="52" ry="5" fill="var(--line)"/>' +
+    // left figure — blue
+    '<circle cx="52" cy="26" r="13" fill="var(--blue)"/>' +
+    '<path d="M31 88V64a21 21 0 0 1 42 0v24z" fill="var(--blue)" opacity=".82"/>' +
+    // right figure — pink, with the bump
+    '<circle cx="99" cy="29" r="12" fill="var(--pink)"/>' +
+    '<path d="M81 88V66a18 18 0 0 1 36 0v22z" fill="var(--pink)" opacity=".82"/>' +
+    '<circle cx="80" cy="70" r="13" fill="var(--pink)" opacity=".82"/>' +
+    // hands meeting over the bump
+    '<path d="M69 66q8 6 16 0" stroke="var(--card)" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+  '</svg>';
+}
+
 function renderJoin(){
   return '' +
-  '<div class="center stack-lg fade" style="padding-top:34px">' +
+  '<div class="center stack-lg fade" style="padding-top:26px">' +
     '<div>' +
+      coupleArt() +
+      (V && V.couple
+        ? '<p class="couple">' + esc(V.couple) + '</p>'
+        : '') +
       '<h1>Blue or Pink?</h1>' +
       '<p class="sub" style="margin-top:8px">Pick a side, play a few rounds, settle it properly.</p>' +
     '</div>' +
@@ -556,7 +583,7 @@ function renderB2045(){
       '<h2 style="margin-top:6px">Baby 2045</h2>' +
       '<p style="font-size:15px;opacity:.8;margin-top:8px;line-height:1.5">' +
         'It’s 2045. Your job is to prepare today’s baby for the world they grow up in. ' +
-        'Spend ' + V.budget + ' points across ten qualities.</p>' +
+        'Spend all ' + V.budget + ' points across the six.</p>' +
     '</div>';
 
   if (b.phase === 'compare' || b.phase === 'judged') return board() + head + renderCompare(b);
@@ -616,7 +643,7 @@ function allocEditor(){
       '<button class="step" onclick="bump(\'' + q.key + '\',-5)"' + (val <= 0 ? ' disabled' : '') + '>−</button>' +
       '<span class="val">' + val + '</span>' +
       '<button class="step" onclick="bump(\'' + q.key + '\',5)"' + (left <= 0 ? ' disabled' : '') + '>+</button>' +
-      '<span class="nm">' + esc(q.label) + '</span>' +
+      '<span class="nm">' + esc(qLabel(q)) + '</span>' +
     '</li>';
   }).join('');
 
@@ -634,8 +661,8 @@ function allocEditor(){
       '</div>' +
       (base ? '<p class="tiny" style="margin-bottom:10px' + (overMove ? ';color:var(--pink)' : '') + '">Moved ' +
         movedPts + ' of ' + V.moveCap + ' allowed points</p>' : '') +
-      '<button class="btn" ' + (ok ? '' : 'disabled ') + 'onclick="lockAlloc()">' +
-        (ok ? 'Submit for Team ' + teamName(team) : (left > 0 ? left + ' points left to spend'
+      '<button class="btn" onclick="lockAlloc()">' +
+        (ok ? 'Submit for Team ' + teamName(team) : (left > 0 ? 'Spend ' + left + ' more'
               : overMove ? 'Too many points moved' : (-left) + ' points over')) +
       '</button>' +
     '</div>' +
@@ -656,6 +683,25 @@ function bump(key, d){
 }
 
 function lockAlloc(){
+  var left = V.budget - allocTotal();
+  if (left > 0) {
+    toast('Still ' + left + ' points to give away — spread them across the sections.');
+    return;
+  }
+  if (left < 0) { toast((-left) + ' points over. Take some back first.'); return; }
+
+  var b = V.b2045, base = (b.phase === 'adjust' && b.base) ? b.base[V.me.team] : null;
+  if (base) {
+    var moved = V.qualities.reduce(function(n, q){
+      var d = (draft.alloc[q.key] || 0) - (Number(base[q.key]) || 0);
+      return n + (d > 0 ? d : 0);
+    }, 0);
+    if (moved > V.moveCap) {
+      toast('You can only move ' + V.moveCap + ' points after the scenario.');
+      return;
+    }
+  }
+
   clearTimeout(saveTimer);
   busy = true;
   google.script.run
@@ -670,12 +716,12 @@ function lockAlloc(){
 function allocReadOnly(a){
   return '<ul class="alloc">' + V.qualities.map(function(q){
     return '<li><span class="val">' + (Number(a[q.key]) || 0) + '</span>' +
-           '<span class="nm">' + esc(q.label) + '</span></li>';
+           '<span class="nm">' + esc(qLabel(q)) + '</span></li>';
   }).join('') + '</ul>';
 }
 
 function summaryList(a){
-  var picks = V.qualities.map(function(q){ return { l: q.label, v: Number(a[q.key]) || 0 }; })
+  var picks = V.qualities.map(function(q){ return { l: qLabel(q), v: Number(a[q.key]) || 0 }; })
     .filter(function(x){ return x.v > 0; }).sort(function(x,y){ return y.v - x.v; });
   return '<p class="sub" style="line-height:1.7">' + picks.map(function(p){
     return esc(p.l) + ' <b style="color:var(--ink)">' + p.v + '</b>';
@@ -688,7 +734,7 @@ function renderCompare(b){
     var pk = Number((b.alloc.pink || {})[q.key]) || 0;
     var w = function(n){ return Math.max(6, n * 2.2); };
     return '<div class="bar ' + (bl ? 'b' : 'o b') + '" style="width:' + w(bl) + '%">' + (bl || '') + '</div>' +
-           '<div class="lbl">' + esc(q.label) + '</div>' +
+           '<div class="lbl">' + esc(qLabel(q)) + '</div>' +
            '<div class="bar ' + (pk ? 'p' : 'o') + '" style="width:' + w(pk) + '%">' + (pk || '') + '</div>';
   }).join('');
 
@@ -772,12 +818,11 @@ function render(){
 
 /* ---------------------------------------------------------------- boot */
 render();
-if (PID){
-  google.script.run.withSuccessHandler(function(v){
-    if (!v.me){ PID = null; try{ localStorage.removeItem('reveal.pid'); }catch(e){} }
-    apply(v, true);
-  }).withFailureHandler(function(){}).apiPoll(PID);
-}
+// Poll once straight away, with or without a pid: even a first-time visitor
+// should see the couple's names rather than a bare heading.
+google.script.run.withSuccessHandler(function(v){
+  apply(v, true);
+}).withFailureHandler(function(){}).apiPoll(PID);
 </script>
 </body>
 </html>
