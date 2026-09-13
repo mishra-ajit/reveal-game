@@ -217,7 +217,8 @@ function renderQuestion(){
   var head = '<div class="qmeta">' + (V.round === 1 ? 'Baby by the Numbers' : 'Visual Trivia') +
              ' · ' + (V.qIndex + 1) + ' of ' + V.total + '</div>' +
              '<div class="qtext">' + esc(q.question) + '</div>' +
-             (q.image ? '<img class="qimg" src="' + esc(q.image) + '" alt="">' : '');
+             (q.image ? '<img class="qimg" src="' + esc(q.image) + '" alt="" ' +
+               'onerror="this.style.display=\'none\'">' : '');
 
   var body = '';
   if (q.type === 'number'){
@@ -240,7 +241,8 @@ function renderQuestion(){
         var on = (mine === L) ? ' on' : '';
         if (isImg){
           return '<button class="opt img' + on + '" onclick="pickOpt(\'' + L + '\')">' +
-            '<img src="' + esc(q.images[i] || '') + '" alt=""><span class="cap">' + esc(o) + '</span></button>';
+            '<img src="' + esc(q.images[i] || '') + '" alt="" ' +
+              'onerror="this.style.display=\'none\';this.parentNode.classList.add(\'noimg\')"><span class="cap">' + esc(o) + '</span></button>';
         }
         return '<button class="opt' + on + '" onclick="pickOpt(\'' + L + '\')">' + esc(optLabel(o)) + '</button>';
       }).join('') + '</div>';

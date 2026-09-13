@@ -17,11 +17,13 @@
  */
 
 /**
- * Images live in this repo under /assets and are served by jsDelivr straight
- * from GitHub. To use your own picture, just paste any public image URL into
- * the Trivia tab of the content Sheet instead.
+ * Images are served from docs/assets by the same GitHub Pages site that
+ * serves the game, so if the page loaded, the pictures will load too — no
+ * third-party CDN to be slow, stale or blocked on someone's network.
+ * Copy any new picture into BOTH assets/ and docs/assets/, or paste any
+ * public image URL into the Trivia tab of the content Sheet instead.
  */
-var IMG = 'https://cdn.jsdelivr.net/gh/mishra-ajit/reveal-game@main/assets/';
+var IMG = 'https://mishra-ajit.github.io/reveal-game/assets/';
 
 var SEED = {
 
@@ -159,7 +161,7 @@ var SEED = {
  * Sheet is rewritten from SEED — which does discard hand edits, so bump it
  * only for real content upgrades, not for tweaking a single question.
  */
-var CONTENT_V = 5;
+var CONTENT_V = 6;
 
 var SHEET_TABS = {
   Numbers:   ['id','question','optA','optB','optC','optD','answer','fact','source'],
