@@ -65,7 +65,19 @@ var SEED = {
       fact: 'Anything from 2.5 kg to 4.0 kg is considered a normal range.',
       source: 'World Health Organization' },
 
+    { id: 'n7',
+      question: 'How much sleep do new parents lose in the first year?',
+      options: ['About 100 hours', 'About 250 hours', 'About 400 hours', 'About 700 hours'],
+      answer: 'D',
+      fact: 'Close to two hours a night, every night, for a year. Good moment to ask the room who is signing up for the night shift.',
+      source: 'Sleep (Oxford Academic), 2019 cohort study' },
 
+    { id: 'n8',
+      question: 'Which word do babies around the world tend to say first?',
+      options: ['Mama', 'Dada', 'No', 'The dog’s name'],
+      answer: 'B',
+      fact: '"Dada" usually wins, purely because the sound is easier to make. Take it up with the tongue, not the child. Who in this room is betting on their own name?',
+      source: 'Journal of Child Language' }
   ],
 
   /* ---------------- Round 3 — Visual Trivia ---------------- */
@@ -124,7 +136,24 @@ var SEED = {
       options: ['Three', 'Twelve', 'Forty', 'Ninety'],
       answer: 'B',
       explanation: 'About 1 in 80 births. Roughly 1.6 million pairs of twins a year.',
-      source: 'Human Reproduction, 2021' }
+      source: 'Human Reproduction, 2021' },
+
+    { id: 't8', type: 'mc',
+      question: 'A newborn will grip your finger hard enough to do what?',
+      image: IMG + 'grasp.jpg',
+      options: ['Nothing, it is just a twitch', 'Hold a pencil', 'Take their own body weight',
+                'Pull themselves upright'],
+      answer: 'C',
+      explanation: 'The grasp reflex is strong enough to hang from a bar — briefly, and absolutely do not test this. Everyone offer a finger to the nearest baby photo and see who is brave.',
+      source: 'Journal of Pediatrics, palmar grasp reflex studies' },
+
+    { id: 't9', type: 'mc',
+      question: 'Which of these do newborns genuinely find soothing?',
+      image: IMG + 'newborn-face.jpg',
+      options: ['Total silence', 'A vacuum cleaner', 'Classical music', 'Being talked to quietly'],
+      answer: 'B',
+      explanation: 'White noise beats silence — the womb was loud. Plenty of parents swear by the hoover at 3am. Show of hands: whose party trick is this going to be?',
+      source: 'American Academy of Pediatrics' }
   ],
 
   qualities: [
@@ -133,7 +162,12 @@ var SEED = {
     { key: 'sport',  label: 'Good at sport',    emoji: '⚽' },
     { key: 'books',  label: 'Reads a lot',      emoji: '📚' },
     { key: 'cook',   label: 'Can cook',         emoji: '🍳' },
-    { key: 'people', label: 'Good with people', emoji: '🗣️' }
+    { key: 'people', label: 'Good with people', emoji: '🗣️' },
+    { key: 'funny',  label: 'Actually funny',    emoji: '😄' },
+    { key: 'lucky',  label: 'Just lucky',        emoji: '🍀' },
+    { key: 'ai',     label: 'Works well with AI',emoji: '🤝' },
+    { key: 'focus',  label: 'Can focus',         emoji: '🎯' },
+    { key: 'spot',   label: 'Spots a fake',      emoji: '🔍' }
   ],
 
   scenarios: [
@@ -161,7 +195,7 @@ var SEED = {
  * Sheet is rewritten from SEED — which does discard hand edits, so bump it
  * only for real content upgrades, not for tweaking a single question.
  */
-var CONTENT_V = 6;
+var CONTENT_V = 7;
 
 var SHEET_TABS = {
   Numbers:   ['id','question','optA','optB','optC','optD','answer','fact','source'],
