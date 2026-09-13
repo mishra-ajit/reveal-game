@@ -168,6 +168,10 @@
   .spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);
         border-top-color:var(--sub);animation:sp .8s linear infinite;flex:none}
   @keyframes sp{to{transform:rotate(360deg)}}
+  .art{display:block;width:150px;height:96px;margin:0 auto 10px}
+  .couple{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+          color:var(--sub);margin:0 0 10px}
+
   .fade{animation:fd .22s ease}
   @keyframes fd{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 
@@ -253,6 +257,12 @@
 <script>
 var PIN = null || null;
 var V = null, lastV = -1, busy = false;
+
+// Redrawing under the host's finger swallows the tap — which is why a button
+// could need several presses. Hold updates for a moment after any touch.
+var lastTap = 0, heldRender = null;
+document.addEventListener('pointerdown', function(){ lastTap = Date.now(); }, true);
+function quiet(){ return Date.now() - lastTap > 1200; }
 if (!PIN) { try { PIN = localStorage.getItem('reveal.pin') || null; } catch (e) {} }
 if (PIN) { try { localStorage.setItem('reveal.pin', PIN); } catch (e) {} }
 
@@ -277,7 +287,11 @@ function act(action, payload, confirmMsg){
 function poll(){
   if (!PIN || busy) return;
   google.script.run.withSuccessHandler(function(v){
-    V = v; if (v.v !== lastV) { lastV = v.v; render(); }
+    V = v;
+    if (v.v === lastV) return;
+    lastV = v.v;
+    if (!quiet()) { clearTimeout(heldRender); heldRender = setTimeout(render, 1200); return; }
+    render();
   }).withFailureHandler(function(){}).apiHostPoll(PIN);
 }
 setInterval(poll, 2500);
@@ -338,6 +352,9 @@ function startRound(r){
 }
 
 function players(){
+  var blue = V.players.filter(function(p){ return p.team === 'blue'; }).length;
+  var pink = V.players.length - blue;
+  var lopsided = Math.abs(blue - pink) > 1;
   var rows = V.players.map(function(p){
     var isCap = V.b2045Full && (V.b2045Full.captain.blue === p.id || V.b2045Full.captain.pink === p.id);
     return '<div class="hrow">' +
@@ -364,7 +381,14 @@ function players(){
     '</div>';
   }).join('');
   return '<div class="card">' +
-    '<div class="qmeta" style="margin-bottom:10px">Players · ' + V.players.length + '</div>' +
+    '<div class="row" style="align-items:center;justify-content:space-between;margin-bottom:10px">' +
+      '<div class="qmeta" style="margin:0">Players · ' + V.players.length +
+        ' <span style="color:var(--sub)">·</span> ' +
+        '<span style="color:var(--blue)">' + blue + ' blue</span>' +
+        ' <span style="color:var(--sub)">/</span> ' +
+        '<span style="color:var(--pink)">' + pink + ' pink</span></div>' +
+      (lopsided ? '<button class="btn ghost sm" onclick="act(\'balanceTeams\',{})">Even out</button>' : '') +
+    '</div>' +
     (rows || '<p class="sub">Nobody has joined yet. Share the player link.</p>') +
   '</div>';
 }
@@ -466,9 +490,21 @@ function b2045Control(){
 }
 
 /* ---------------------------------------------------------------- danger zone */
+function saveCouple(){
+  var el = $('coupleIn');
+  if (el) act('setCouple', { couple: el.value.trim() });
+}
+
 function admin(){
   return '<div class="card stack">' +
     '<div class="qmeta">Admin</div>' +
+    '<p class="tiny">Names on the welcome screen</p>' +
+    '<div class="row">' +
+      '<input type="text" id="coupleIn" maxlength="60" placeholder="Ajit &amp; Priya" ' +
+        'value="' + esc(V.couple || '') + '" ' +
+        'onkeydown="if(event.key===\'Enter\')saveCouple()">' +
+      '<button class="btn ghost sm" onclick="saveCouple()">Save</button>' +
+    '</div>' +
     '<div class="row">' +
       '<button class="btn ghost sm" onclick="act(\'resetScores\',{},\'Reset all scores and answers? Players stay.\')">Reset scores</button>' +
       '<button class="btn ghost sm" onclick="act(\'resetGame\',{keepPlayers:true},\'Full reset, keeping players?\')">Reset game</button>' +
@@ -480,12 +516,19 @@ function admin(){
 }
 
 /* ---------------------------------------------------------------- render */
+var lastHtml = null;
+
 function render(){
+  clearTimeout(heldRender);
   var app = $('app');
-  if (!PIN || !V){ app.innerHTML = renderPin(); return; }
-  app.innerHTML = board() + steps() + roundControl() +
-                  '<div style="height:12px"></div>' + players() +
-                  '<div style="height:12px"></div>' + admin();
+  var html = (!PIN || !V)
+    ? renderPin()
+    : board() + steps() + roundControl() +
+      '<div style="height:12px"></div>' + players() +
+      '<div style="height:12px"></div>' + admin();
+  if (html === lastHtml) return;    // nothing changed; leave the buttons alone
+  lastHtml = html;
+  app.innerHTML = html;
 }
 
 render();
