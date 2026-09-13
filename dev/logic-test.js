@@ -91,8 +91,9 @@ ok(v.b2045.alloc.pink===null, 'a blue player cannot see the pink allocation yet'
 
 const keys = S.content().qualities.map(q=>q.key);
 const spread = (pairs)=>{ const o={}; keys.forEach(k=>o[k]=0); Object.assign(o,pairs); return o; };
-const blueA = spread({[keys[0]]:30,[keys[2]]:30,[keys[6]]:40});
-const pinkA = spread({[keys[1]]:50,[keys[8]]:30,[keys[9]]:20});
+ok(keys.length >= 4 && keys.length <= 8, 'a manageable number of qualities');
+const blueA = spread({[keys[0]]:30,[keys[2]]:30,[keys[3]]:40});
+const pinkA = spread({[keys[1]]:50,[keys[2]]:30,[keys[keys.length-1]]:20});
 
 ok((()=>{ try { S.apiSetAlloc(pid.Priya, blueA); return false; } catch(e){ return /captain/.test(e.message); } })(),
    'non-captains cannot edit the allocation');
@@ -110,12 +111,12 @@ ok(v.b2045.phase==='adjust' && v.b2045.scenario && v.b2045.scenario.title, 'scen
 ok(v.b2045.locked.blue===false, 'blue can edit again');
 
 // move more than the cap
-const tooFar = spread({[keys[0]]:5,[keys[2]]:30,[keys[6]]:40,[keys[3]]:25});
+const tooFar = spread({[keys[0]]:5,[keys[2]]:30,[keys[3]]:40,[keys[1]]:25});
 S.apiSetAlloc(pid.Ajit, tooFar);
 ok((()=>{ try { S.apiLockAlloc(pid.Ajit); return false; } catch(e){ return /only move 20/.test(e.message); } })(),
    'cannot move more than 20 points after the scenario');
 
-const okMove = spread({[keys[0]]:15,[keys[2]]:30,[keys[6]]:40,[keys[3]]:15});
+const okMove = spread({[keys[0]]:15,[keys[2]]:30,[keys[3]]:40,[keys[1]]:15});
 S.apiSetAlloc(pid.Ajit, okMove); S.apiLockAlloc(pid.Ajit);
 S.apiLockAlloc(pid.Neha);
 ok(S.apiPoll(pid.Ajit).b2045.phase==='compare', 'both locked -> compare');
@@ -130,8 +131,9 @@ ok(v.scores.pink === 15, 'each pink player got 5 points');
 // --- ROUND 3
 S.apiHost(PIN, 'startRound', {round:3});
 v = S.apiPoll(pid.Ajit);
-ok(v.round===3 && v.q.type==='mc' && v.q.image, 'trivia question with an image');
-ok(v.q.options.length===4, 'four options');
+const trivia = S.content().trivia;
+ok(v.round===3 && v.q && v.q.options.length===4, 'round 3 opens on a four-option question');
+ok(trivia.every(q=>q.image || (q.images||[]).length===4), 'every trivia question carries a picture');
 
 const t0 = S.content().trivia[0];
 S.apiAnswer(pid.Ajit,  t0.answer);          // right
@@ -141,8 +143,11 @@ const bluePre = S.apiPoll(pid.Ajit).scores.blue;
 S.apiHost(PIN, 'reveal', {});
 ok(S.apiPoll(pid.Ajit).scores.blue === bluePre + 4, 'two correct answers = 2 points each');
 
-// image-choice question
-S.apiHost(PIN,'next',{});
+// the pick-a-picture question, wherever it sits in the round
+const imgIdx = trivia.findIndex(q=>q.type==='image');
+ok(imgIdx >= 0, 'the round has a pick-a-picture question');
+S.apiHost(PIN,'startRound',{round:3});
+for (let i=0;i<imgIdx;i++) S.apiHost(PIN,'next',{});
 ok(S.apiPoll(pid.Ajit).q.type==='image', 'image-choice question renders');
 ok(S.apiPoll(pid.Ajit).q.images.length===4, 'four option images');
 
