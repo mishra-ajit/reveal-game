@@ -91,7 +91,7 @@ ok(v.b2045.alloc.pink===null, 'a blue player cannot see the pink allocation yet'
 
 const keys = S.content().qualities.map(q=>q.key);
 const spread = (pairs)=>{ const o={}; keys.forEach(k=>o[k]=0); Object.assign(o,pairs); return o; };
-ok(keys.length >= 4 && keys.length <= 8, 'a manageable number of qualities');
+ok(keys.length >= 4 && keys.length <= 12, 'a manageable number of qualities');
 const blueA = spread({[keys[0]]:30,[keys[2]]:30,[keys[3]]:40});
 const pinkA = spread({[keys[1]]:50,[keys[2]]:30,[keys[keys.length-1]]:20});
 

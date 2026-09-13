@@ -46,7 +46,7 @@ ok(teamCount('blue') === 6 && teamCount('pink') === 6, 'teams are even: 6 blue, 
 /* ---- Round 1: everyone answers every question ---- */
 S.apiHost(PIN, 'startRound', { round: 1 });
 const numbers = S.content().numbers;
-ok(numbers.length === 5, 'round 1 is five questions');
+ok(numbers.length === 7, 'round 1 is seven questions');
 
 numbers.forEach((q, i) => {
   NAMES.forEach((n, k) => {
@@ -73,7 +73,7 @@ caps.blue = full.captain.blue; caps.pink = full.captain.pink;
 ok(caps.blue && caps.pink, 'a captain per team');
 
 const keys = S.content().qualities.map(q => q.key);
-ok(keys.length === 6, 'six qualities to spend on');
+ok(keys.length === 11, 'eleven qualities to spend on');
 const spread = pairs => { const o = {}; keys.forEach(k => o[k] = 0); Object.assign(o, pairs); return o; };
 
 // a captain who has not spent it all is refused, with a message that says so
@@ -105,7 +105,7 @@ ok(S.apiPoll(pid.Ajit).scores.pink === pinkBefore + 30, 'all six pink players go
 /* ---- Round 3 ---- */
 S.apiHost(PIN, 'startRound', { round: 3 });
 const trivia = S.content().trivia;
-ok(trivia.length === 7, 'round 3 is seven questions');
+ok(trivia.length === 9, 'round 3 is nine questions');
 trivia.forEach((q, i) => {
   NAMES.forEach((n, k) => S.apiAnswer(pid[n], (k % 2 === 0) ? q.answer : 'ABCD'[(k + i) % 4]));
   S.apiHost(PIN, 'reveal', {});
