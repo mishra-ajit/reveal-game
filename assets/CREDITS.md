@@ -12,3 +12,7 @@ All images are from Wikimedia Commons. Local copies are resized.
 - **incubator-1978** — [Infant-Incubator-wBaby-1978-USA.jpg](https://commons.wikimedia.org/wiki/File:Infant-Incubator-wBaby-1978-USA.jpg) by Evan-Amos. License: Public domain.
 - **diaper-pins** — [Diaper pins.jpg](https://commons.wikimedia.org/wiki/File:Diaper_pins.jpg) by Headlock0225. License: CC BY-SA 4.0.
 - **twins** — [Breastfeeding newborn twins.jpg](https://commons.wikimedia.org/wiki/File:Breastfeeding_newborn_twins.jpg) by Mypurplelighter. License: CC BY-SA 4.0.
+- **crying-baby** — [Crying infant (43101898172).jpg](https://commons.wikimedia.org/wiki/File:Crying_infant_(43101898172).jpg) by KAI Productions™ from Hà Nội, Việt Nam. License: CC BY 2.0.
+- **newborn-face** — [Newborn Baby (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Newborn_Baby_(Unsplash).jpg) by Mindy Olson P mindyop. License: CC0.
+- **baby-feet** — [Newborn baby feet (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Newborn_baby_feet_(Unsplash).jpg) by Janko Ferlič thepootphotographer. License: CC0.
+- **grasp** — [Grasp reflex baby.jpg](https://commons.wikimedia.org/wiki/File:Grasp_reflex_baby.jpg) by Rlunaro. License: CC BY-SA 4.0.
