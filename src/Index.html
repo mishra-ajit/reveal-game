@@ -88,7 +88,7 @@ function renderJoin(){
   '<div class="center stack-lg fade" style="padding-top:44px">' +
     '<div>' +
       (V && V.couple
-        ? '<p class="couple">' + esc(V.couple) + '</p>'
+        ? '<div style="text-align:center"><p class="couple">' + esc(V.couple) + '</p></div>'
         : '') +
       '<h1>Blue or Pink?</h1>' +
       '<p class="sub" style="margin-top:8px">Pick a side, play a few rounds, settle it properly.</p>' +
@@ -172,12 +172,50 @@ function waiting(text){
 }
 
 /* ---------------------------------------------------------------- lobby */
+/* The two of them, drawn in the same soft register as the backdrop rather
+   than as flat clip-art: a warm evening glow, two silhouettes, one bump.
+   Inline SVG, so it is always there — no file to go missing. */
+function coupleArt(){
+  return '' +
+  '<svg class="art" viewBox="0 0 260 132" role="img" aria-label="The parents-to-be">' +
+    '<defs>' +
+      '<linearGradient id="cSky" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="#E4EDFB"/><stop offset="0.55" stop-color="#F3E8F3"/>' +
+        '<stop offset="1" stop-color="#FBE2E9"/></linearGradient>' +
+      '<radialGradient id="cSun" cx="0.5" cy="0.5" r="0.5">' +
+        '<stop offset="0" stop-color="#FFFFFF" stop-opacity="0.95"/>' +
+        '<stop offset="1" stop-color="#FFD9BE" stop-opacity="0"/></radialGradient>' +
+      '<clipPath id="cClip"><rect width="260" height="132" rx="16"/></clipPath>' +
+    '</defs>' +
+    '<g clip-path="url(#cClip)">' +
+      '<rect width="260" height="132" fill="url(#cSky)"/>' +
+      '<circle cx="186" cy="52" r="62" fill="url(#cSun)"/>' +
+      '<circle cx="186" cy="52" r="20" fill="#FFF6EE"/>' +
+      '<ellipse cx="54" cy="40" rx="34" ry="8" fill="#FFFFFF" opacity="0.66"/>' +
+      '<ellipse cx="212" cy="96" rx="40" ry="8" fill="#FFFFFF" opacity="0.5"/>' +
+      '<path d="M0 104c44-16 74 8 112-4s72-14 100 2 34 10 48 6v24H0z" fill="#C6D6EE" opacity="0.75"/>' +
+      '<path d="M0 118c52-12 86 10 130 0s76-8 130 4v10H0z" fill="#F0BACE" opacity="0.7"/>' +
+      // the couple
+      '<g fill="#5E7BA8" opacity="0.72">' +
+        '<path d="M104 120V94c0-10 5-16 12-16s12 6 12 16v26z"/><circle cx="116" cy="66" r="11"/>' +
+        '<path d="M136 120V98c0-9 4-14 10-14s10 5 10 14v22z"/><circle cx="146" cy="72" r="10"/>' +
+        '<circle cx="133" cy="103" r="13"/>' +
+      '</g>' +
+      '<path d="M120 100q12 8 24 0" stroke="#FBE2E9" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="0.9"/>' +
+    '</g>' +
+  '</svg>';
+}
+
 function renderLobby(){
   var t = V.me.team;
   return board() +
   '<div class="card stack fade">' +
     '<div class="center">' +
-      '<span class="pill ' + t + '">You’re Team ' + teamName(t) + '</span>' +
+      coupleArt() +
+      (V.couple ? '<div style="text-align:center"><p class="couple">' +
+        esc(V.couple) + '</p></div>' : '') +
+      '<div style="text-align:center"><span class="pill ' + t + '">You’re Team ' +
+        teamName(t) + '</span></div>' +
       '<h2 style="margin-top:12px">Hi ' + esc(V.me.name) + '</h2>' +
       '<p class="sub" style="margin-top:6px">Three quick rounds. Keep this tab open — ' +
         'questions appear here on their own.</p>' +
