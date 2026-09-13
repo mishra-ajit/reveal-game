@@ -16,10 +16,22 @@ var lastV = -1;       // last rendered version
 var draft = {};       // local, unsent answer / allocation
 var busy = false;
 
-try { PID = localStorage.getItem('reveal.pid') || null; } catch (e) {}
+var SAVED = { name: '', team: null };
+try {
+  PID = localStorage.getItem('reveal.pid') || null;
+  SAVED.name = localStorage.getItem('reveal.name') || '';
+  SAVED.team = localStorage.getItem('reveal.team') || null;
+} catch (e) {}
+
+// A tap and a redraw must never collide: redrawing under someone's finger
+// swallows the tap, so hold updates for a moment after any touch.
+var lastTap = 0, heldRender = null;
+document.addEventListener('pointerdown', function(){ lastTap = Date.now(); }, true);
+function quiet(){ return Date.now() - lastTap > 1200; }
 
 /* ---------------------------------------------------------------- utils */
 function $(id){ return document.getElementById(id); }
+function qLabel(q){ return (q.emoji ? q.emoji + ' ' : '') + q.label; }
 function esc(s){ return String(s == null ? '' : s)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function num(n){ return Number(n).toLocaleString('en-IN'); }
@@ -49,6 +61,11 @@ function apply(v, force){
   // don't yank a keyboard away mid-type
   var a = document.activeElement;
   if (!force && a && a.tagName === 'INPUT') return;
+  if (!force && !quiet()) {
+    clearTimeout(heldRender);
+    heldRender = setTimeout(render, 1200);
+    return;
+  }
   render();
 }
 
@@ -56,19 +73,42 @@ function apply(v, force){
 function poll(){
   if (!PID || busy) return;
   google.script.run.withSuccessHandler(function(v){
-    if (!v.me) { PID = null; try{ localStorage.removeItem('reveal.pid'); }catch(e){} lastV = -1; render(); return; }
+    // Host wiped the game? Keep the name and team so rejoining is one tap.
+    if (!v.me) { PID = null; lastV = -1; render(); return; }
     apply(v);
   }).withFailureHandler(function(){}).apiPoll(PID);
 }
 setInterval(poll, 2500);
 
 /* ---------------------------------------------------------------- join */
-var joinTeam = null;
+var joinTeam = SAVED.team;
+
+/* A small drawing of the two of them. Deliberately plain: two figures, one
+   bump, no faces to get wrong. Colours come from the theme, not the markup. */
+function coupleArt(){
+  return '' +
+  '<svg class="art" viewBox="0 0 150 96" role="img" aria-label="The parents-to-be">' +
+    '<ellipse cx="75" cy="88" rx="52" ry="5" fill="var(--line)"/>' +
+    // left figure — blue
+    '<circle cx="52" cy="26" r="13" fill="var(--blue)"/>' +
+    '<path d="M31 88V64a21 21 0 0 1 42 0v24z" fill="var(--blue)" opacity=".82"/>' +
+    // right figure — pink, with the bump
+    '<circle cx="99" cy="29" r="12" fill="var(--pink)"/>' +
+    '<path d="M81 88V66a18 18 0 0 1 36 0v22z" fill="var(--pink)" opacity=".82"/>' +
+    '<circle cx="80" cy="70" r="13" fill="var(--pink)" opacity=".82"/>' +
+    // hands meeting over the bump
+    '<path d="M69 66q8 6 16 0" stroke="var(--card)" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+  '</svg>';
+}
 
 function renderJoin(){
   return '' +
-  '<div class="center stack-lg fade" style="padding-top:34px">' +
+  '<div class="center stack-lg fade" style="padding-top:26px">' +
     '<div>' +
+      coupleArt() +
+      (V && V.couple
+        ? '<p class="couple">' + esc(V.couple) + '</p>'
+        : '') +
       '<h1>Blue or Pink?</h1>' +
       '<p class="sub" style="margin-top:8px">Pick a side, play a few rounds, settle it properly.</p>' +
     '</div>' +
@@ -79,9 +119,10 @@ function renderJoin(){
         '<span class="dot"></span>Pink</button>' +
     '</div>' +
     '<input type="text" id="nameIn" placeholder="Your first name" autocomplete="given-name" ' +
-      'maxlength="18" enterkeyhint="go" oninput="refreshJoinBtn()" ' +
+      'maxlength="18" enterkeyhint="go" value="' + esc(SAVED.name) + '" oninput="refreshJoinBtn()" ' +
       'onkeydown="if(event.key===\'Enter\')doJoin()">' +
-    '<button class="btn" id="joinBtn" disabled onclick="doJoin()">Join the game</button>' +
+    '<button class="btn" id="joinBtn" disabled onclick="doJoin()">' +
+      (SAVED.name ? 'Rejoin as ' + esc(SAVED.name) : 'Join the game') + '</button>' +
   '</div>';
 }
 
@@ -108,7 +149,12 @@ function doJoin(){
     .withSuccessHandler(function(r){
       busy = false;
       PID = r.pid;
-      try { localStorage.setItem('reveal.pid', PID); } catch (e) {}
+      SAVED.name = name; SAVED.team = joinTeam;
+      try {
+        localStorage.setItem('reveal.pid', PID);
+        localStorage.setItem('reveal.name', name);
+        localStorage.setItem('reveal.team', joinTeam);
+      } catch (e) {}
       apply(r.view, true);
     })
     .withFailureHandler(function(e){
@@ -291,7 +337,7 @@ function renderB2045(){
       '<h2 style="margin-top:6px">Baby 2045</h2>' +
       '<p style="font-size:15px;opacity:.8;margin-top:8px;line-height:1.5">' +
         'It’s 2045. Your job is to prepare today’s baby for the world they grow up in. ' +
-        'Spend ' + V.budget + ' points across ten qualities.</p>' +
+        'Spend all ' + V.budget + ' points across the six.</p>' +
     '</div>';
 
   if (b.phase === 'compare' || b.phase === 'judged') return board() + head + renderCompare(b);
@@ -351,7 +397,7 @@ function allocEditor(){
       '<button class="step" onclick="bump(\'' + q.key + '\',-5)"' + (val <= 0 ? ' disabled' : '') + '>−</button>' +
       '<span class="val">' + val + '</span>' +
       '<button class="step" onclick="bump(\'' + q.key + '\',5)"' + (left <= 0 ? ' disabled' : '') + '>+</button>' +
-      '<span class="nm">' + esc(q.label) + '</span>' +
+      '<span class="nm">' + esc(qLabel(q)) + '</span>' +
     '</li>';
   }).join('');
 
@@ -369,8 +415,8 @@ function allocEditor(){
       '</div>' +
       (base ? '<p class="tiny" style="margin-bottom:10px' + (overMove ? ';color:var(--pink)' : '') + '">Moved ' +
         movedPts + ' of ' + V.moveCap + ' allowed points</p>' : '') +
-      '<button class="btn" ' + (ok ? '' : 'disabled ') + 'onclick="lockAlloc()">' +
-        (ok ? 'Submit for Team ' + teamName(team) : (left > 0 ? left + ' points left to spend'
+      '<button class="btn" onclick="lockAlloc()">' +
+        (ok ? 'Submit for Team ' + teamName(team) : (left > 0 ? 'Spend ' + left + ' more'
               : overMove ? 'Too many points moved' : (-left) + ' points over')) +
       '</button>' +
     '</div>' +
@@ -391,6 +437,25 @@ function bump(key, d){
 }
 
 function lockAlloc(){
+  var left = V.budget - allocTotal();
+  if (left > 0) {
+    toast('Still ' + left + ' points to give away — spread them across the sections.');
+    return;
+  }
+  if (left < 0) { toast((-left) + ' points over. Take some back first.'); return; }
+
+  var b = V.b2045, base = (b.phase === 'adjust' && b.base) ? b.base[V.me.team] : null;
+  if (base) {
+    var moved = V.qualities.reduce(function(n, q){
+      var d = (draft.alloc[q.key] || 0) - (Number(base[q.key]) || 0);
+      return n + (d > 0 ? d : 0);
+    }, 0);
+    if (moved > V.moveCap) {
+      toast('You can only move ' + V.moveCap + ' points after the scenario.');
+      return;
+    }
+  }
+
   clearTimeout(saveTimer);
   busy = true;
   google.script.run
@@ -405,12 +470,12 @@ function lockAlloc(){
 function allocReadOnly(a){
   return '<ul class="alloc">' + V.qualities.map(function(q){
     return '<li><span class="val">' + (Number(a[q.key]) || 0) + '</span>' +
-           '<span class="nm">' + esc(q.label) + '</span></li>';
+           '<span class="nm">' + esc(qLabel(q)) + '</span></li>';
   }).join('') + '</ul>';
 }
 
 function summaryList(a){
-  var picks = V.qualities.map(function(q){ return { l: q.label, v: Number(a[q.key]) || 0 }; })
+  var picks = V.qualities.map(function(q){ return { l: qLabel(q), v: Number(a[q.key]) || 0 }; })
     .filter(function(x){ return x.v > 0; }).sort(function(x,y){ return y.v - x.v; });
   return '<p class="sub" style="line-height:1.7">' + picks.map(function(p){
     return esc(p.l) + ' <b style="color:var(--ink)">' + p.v + '</b>';
@@ -423,7 +488,7 @@ function renderCompare(b){
     var pk = Number((b.alloc.pink || {})[q.key]) || 0;
     var w = function(n){ return Math.max(6, n * 2.2); };
     return '<div class="bar ' + (bl ? 'b' : 'o b') + '" style="width:' + w(bl) + '%">' + (bl || '') + '</div>' +
-           '<div class="lbl">' + esc(q.label) + '</div>' +
+           '<div class="lbl">' + esc(qLabel(q)) + '</div>' +
            '<div class="bar ' + (pk ? 'p' : 'o') + '" style="width:' + w(pk) + '%">' + (pk || '') + '</div>';
   }).join('');
 
@@ -467,28 +532,51 @@ function renderFinal(){
 }
 
 /* ---------------------------------------------------------------- render */
-function render(){
-  var app = $('app');
-  if (!PID || !V || !V.me){ app.className = 'wrap'; app.innerHTML = renderJoin(); refreshJoinBtn(); return; }
-  app.className = 'wrap';
+var lastHtml = null, lastScreen = null;
 
-  if (V.status === 'ended'){ app.innerHTML = renderFinal(); return; }
-  if (V.round === 2){ app.innerHTML = renderB2045(); return; }
-  if (V.round === 1 || V.round === 3){
-    app.innerHTML = (V.phase === 'reveal') ? renderReveal() : renderQuestion();
-    return;
+/** Which screen we are on — not what is on it. */
+function screenKey(){
+  if (!PID || !V || !V.me) return 'join';
+  if (V.status === 'ended') return 'final';
+  if (V.round === 2) return 'b2045:' + (V.b2045 ? V.b2045.phase : '');
+  if (V.round === 1 || V.round === 3) return 'q:' + V.round + ':' + V.qIndex + ':' + V.phase;
+  return 'lobby';
+}
+
+function screenHtml(){
+  if (!PID || !V || !V.me) return renderJoin();
+  if (V.status === 'ended') return renderFinal();
+  if (V.round === 2) return renderB2045();
+  if (V.round === 1 || V.round === 3) {
+    return (V.phase === 'reveal') ? renderReveal() : renderQuestion();
   }
-  app.innerHTML = renderLobby();
+  return renderLobby();
+}
+
+function render(){
+  clearTimeout(heldRender);
+  var app = $('app');
+  var key = screenKey();
+  var html = screenHtml();
+
+  // Arriving somewhere new is worth an animation. A scoreboard ticking over
+  // is not — replaying it on every poll is what made the page blink.
+  if (key === lastScreen) html = html.replace(/ fade\b/g, '');
+  if (html === lastHtml) return;
+
+  lastHtml = html; lastScreen = key;
+  app.className = 'wrap';
+  app.innerHTML = html;
+  if (key === 'join') refreshJoinBtn();
 }
 
 /* ---------------------------------------------------------------- boot */
 render();
-if (PID){
-  google.script.run.withSuccessHandler(function(v){
-    if (!v.me){ PID = null; try{ localStorage.removeItem('reveal.pid'); }catch(e){} }
-    apply(v, true);
-  }).withFailureHandler(function(){}).apiPoll(PID);
-}
+// Poll once straight away, with or without a pid: even a first-time visitor
+// should see the couple's names rather than a bare heading.
+google.script.run.withSuccessHandler(function(v){
+  apply(v, true);
+}).withFailureHandler(function(){}).apiPoll(PID);
 </script>
 </body>
 </html>

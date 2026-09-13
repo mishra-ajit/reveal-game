@@ -111,6 +111,7 @@ function blankState_() {
     answers: {},            // "round:index" -> pid -> {val, ts}
     reveals: {},            // "round:index" -> computed reveal payload
     b2045: blankB2045_(),
+    couple: '',             // "Ajit & Priya" — shown on the welcome screen
     startedAt: Date.now()
   };
 }
@@ -324,6 +325,14 @@ function apiHost(pin, action, payload) {
         st.phase = 'idle';
         break;
 
+      case 'setCouple':
+        st.couple = String(payload.couple || '').slice(0, 60).trim();
+        break;
+
+      case 'balanceTeams':
+        balanceTeams_(st);
+        break;
+
       case 'resetScores':
         st.order.forEach(function (id) { st.players[id].score = 0; });
         st.answers = {};
@@ -335,10 +344,12 @@ function apiHost(pin, action, payload) {
         var keep = payload.keepPlayers;
         var players = keep ? st.players : {};
         var order = keep ? st.order : [];
+        var couple = st.couple;                 // typed once, survives a reset
         var fresh = blankState_();
         Object.keys(fresh).forEach(function (k) { st[k] = fresh[k]; });
         st.players = players;
         st.order = order;
+        st.couple = couple;
         st.order.forEach(function (id) { st.players[id].score = 0; });
         break;
 
@@ -348,6 +359,25 @@ function apiHost(pin, action, payload) {
   });
 
   return hostView_(s);
+}
+
+/**
+ * Evens out the sides, keeping each player where they are when possible —
+ * only the most recent joiners on the bigger team get moved.
+ */
+function balanceTeams_(st) {
+  var want = Math.floor(st.order.length / 2);
+  var big = function () {
+    var blue = st.order.filter(function (id) { return st.players[id].team === 'blue'; });
+    return (blue.length > want) ? 'blue' : (st.order.length - blue.length > st.order.length - want) ? 'pink' : null;
+  };
+  for (var guard = 0; guard < st.order.length; guard++) {
+    var blue = st.order.filter(function (id) { return st.players[id].team === 'blue'; });
+    var pink = st.order.filter(function (id) { return st.players[id].team === 'pink'; });
+    if (Math.abs(blue.length - pink.length) <= 1) break;
+    var from = (blue.length > pink.length) ? blue : pink;
+    st.players[from[from.length - 1]].team = (from === blue) ? 'pink' : 'blue';
+  }
 }
 
 /** Wipes answers and results for one round so it can be replayed cleanly. */
@@ -414,6 +444,7 @@ function doReveal_(st, c) {
   rows.forEach(function (r) { if (r.points) st.players[r.pid].score += r.points; });
 
   st.reveals[key] = {
+    qid: q.id,
     answer: q.answer,
     unit: q.unit || '',
     explanation: q.explanation || q.fact || '',
@@ -441,6 +472,7 @@ function view_(st, pid) {
 
   var v = {
     v: st.v,
+    couple: st.couple || '',
     status: st.status,
     round: st.round,
     phase: st.phase,
@@ -471,7 +503,10 @@ function view_(st, pid) {
         unit: q.unit || ''
       };
     }
-    if (st.phase === 'reveal' && st.reveals[key]) v.reveal = st.reveals[key];
+    // A reveal cached against a question that has since been edited away
+    // would show the wrong answer, so only trust one that still matches.
+    var rv = st.reveals[key];
+    if (st.phase === 'reveal' && rv && (!rv.qid || !q || rv.qid === q.id)) v.reveal = rv;
   }
 
   if (st.round === 2) {

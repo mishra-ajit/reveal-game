@@ -55,12 +55,6 @@ var SEED = {
       fact: 'In stretches of two to four hours. The total is generous; the scheduling is not.',
       source: 'American Academy of Pediatrics' },
 
-    { id: 'n5',
-      question: 'What percentage of babies actually arrive on their estimated due date?',
-      options: ['5%', '18%', '35%', '60%'],
-      answer: 'A',
-      fact: 'About 1 in 20. Most arrive in the two weeks either side of it.',
-      source: 'Perinatal Institute / ACOG' },
 
     { id: 'n6',
       question: 'What is the average birth weight of a full-term baby?',
@@ -69,111 +63,92 @@ var SEED = {
       fact: 'Anything from 2.5 kg to 4.0 kg is considered a normal range.',
       source: 'World Health Organization' },
 
-    { id: 'n7',
-      question: 'Roughly how many babies are born in India every day?',
-      options: ['63,000', '1,10,000', '2,40,000', '5,00,000'],
-      answer: 'A',
-      fact: 'Around 23 million a year — more than any other country on earth.',
-      source: 'UN World Population Prospects 2024' },
 
-    { id: 'n8',
-      question: 'How many times a minute does a newborn’s heart beat?',
-      options: ['60', '90', '130', '190'],
-      answer: 'C',
-      fact: 'Normal range is 120–160. An adult at rest sits around 70.',
-      source: 'American Heart Association' }
   ],
 
   /* ---------------- Round 3 — Visual Trivia ---------------- */
   trivia: [
-    { id: 't1', type: 'mc',
-      question: 'At roughly what stage of pregnancy was this scan taken?',
-      image: IMG + 'ultrasound-20w.jpg',
-      options: ['8 weeks', '14 weeks', '20 weeks', '32 weeks'],
-      answer: 'C',
-      explanation: 'The 20-week scan is the big one — it checks anatomy in detail, which is why you can see a full profile.',
-      source: 'Wikimedia Commons / NHS fetal anomaly screening' },
-
-    { id: 't2', type: 'image',
-      question: 'A human pregnancy runs about 40 weeks. Which of these is closest?',
-      image: '',
+    { id: 't1', type: 'image',
+      question: 'One of these mums is pregnant for about as long as a human. Which?',
       options: ['Elephant', 'Giraffe', 'Cow', 'Dog'],
-      images: [
-        IMG + 'elephant.jpg',
-        IMG + 'giraffe.jpg',
-        IMG + 'cow.jpg',
-        IMG + 'dog.jpg'
-      ],
+      images: [IMG + 'elephant.jpg', IMG + 'giraffe.jpg', IMG + 'cow.jpg', IMG + 'dog.jpg'],
       answer: 'C',
-      explanation: 'A cow carries for about 283 days — almost exactly a human term. Elephants take 22 months; dogs, nine weeks.',
-      source: 'Encyclopaedia Britannica' },
+      explanation: 'A cow runs about nine months, same as us. An elephant takes nearly two years.',
+      source: 'San Diego Zoo Wildlife Alliance' },
+
+    { id: 't2', type: 'mc',
+      question: 'A newborn’s cry is about as loud as…',
+      image: IMG + 'crying-baby.jpg',
+      options: ['A normal conversation', 'A vacuum cleaner', 'A motorbike', 'A rock concert'],
+      answer: 'D',
+      explanation: 'Up to about 110 decibels, measured close up. There is no volume knob.',
+      source: 'Journal of Voice / NIDCD noise levels' },
 
     { id: 't3', type: 'mc',
-      question: 'This baby feeding bottle is from which era?',
-      image: IMG + 'feeding-bottle-1901.jpg',
-      options: ['1900s–1910s', '1940s', '1960s', '1980s'],
-      answer: 'A',
-      explanation: 'London, 1901–1918. Bottles with long rubber tubes were nearly impossible to clean — doctors eventually campaigned against them.',
-      source: 'Wellcome Collection' },
+      question: 'How far can a newborn actually see clearly?',
+      image: IMG + 'newborn-face.jpg',
+      options: ['About 5 cm', 'About 25 cm', 'About a metre', 'Across the room'],
+      answer: 'B',
+      explanation: 'Almost exactly the distance to your face when you are holding them. Not a coincidence.',
+      source: 'American Academy of Ophthalmology' },
 
     { id: 't4', type: 'mc',
-      question: 'Which country records the most births every year?',
-      image: IMG + 'world-map.png',
-      options: ['China', 'India', 'Nigeria', 'Indonesia'],
-      answer: 'B',
-      explanation: 'India, at roughly 23 million a year. China now records under 10 million.',
-      source: 'UN World Population Prospects 2024' },
+      question: 'Which of these can a baby do on day one?',
+      image: IMG + 'grasp.jpg',
+      options: ['Recognise their mother’s voice', 'Cry actual tears', 'See in full colour', 'Sweat'],
+      answer: 'A',
+      explanation: 'They have been listening to it for months. Real tears take about three weeks.',
+      source: 'Kisilevsky et al., Psychological Science' },
 
     { id: 't5', type: 'mc',
-      question: 'The modern infant incubator was inspired by a machine built for what?',
-      image: IMG + 'incubator-1978.jpg',
-      options: ['Hatching chicken eggs', 'Growing orchids', 'Proving bread dough', 'Drying photographic plates'],
-      answer: 'A',
-      explanation: 'Paris obstetrician Stéphane Tarnier saw a poultry incubator at the zoo in 1880 and had one built for babies. Infant mortality in his ward halved.',
-      source: 'Journal of Perinatology, history of neonatology' },
+      question: 'Babies are born without which of these?',
+      image: IMG + 'baby-feet.jpg',
+      options: ['Fingerprints', 'Eyebrows', 'Kneecaps', 'Toenails'],
+      answer: 'C',
+      explanation: 'Bony kneecaps arrive around age three. Until then it is cartilage — which is why crawling does not hurt.',
+      source: 'Cleveland Clinic' },
 
     { id: 't6', type: 'mc',
-      question: 'These were the standard baby kit for decades. When did the mass-market disposable nappy arrive?',
-      image: IMG + 'diaper-pins.jpg',
-      options: ['1930s', '1961', '1978', '1990'],
-      answer: 'B',
-      explanation: 'Pampers launched in 1961. It took until the late 1970s for disposables to overtake cloth in most homes.',
-      source: 'Procter & Gamble corporate history' },
+      question: 'Most babies ever born in one delivery, all of whom survived?',
+      image: IMG + 'twins.jpg',
+      options: ['Five', 'Seven', 'Nine', 'Twelve'],
+      answer: 'C',
+      explanation: 'Nine, born in Mali in 2021. All nine celebrated their first birthday.',
+      source: 'BBC News, May 2021' },
 
     { id: 't7', type: 'mc',
       question: 'Out of every 1,000 births worldwide, how many are twins?',
-      image: IMG + 'twins.jpg',
-      options: ['3', '12', '40', '90'],
+      image: IMG + 'ultrasound-20w.jpg',
+      options: ['Three', 'Twelve', 'Forty', 'Ninety'],
       answer: 'B',
-      explanation: 'About 12 in 1,000 — roughly 1.6 million twins a year. The rate has risen by a third since the 1980s.',
-      source: 'Monden, Pison & Smits, Human Reproduction, 2021' }
+      explanation: 'About 1 in 80 births. Roughly 1.6 million pairs of twins a year.',
+      source: 'Human Reproduction, 2021' }
   ],
 
-  /* ---------------- Round 2 — Baby 2045 ---------------- */
   qualities: [
-    { key: 'creativity',   label: 'Creativity',             emoji: '✎' },
-    { key: 'eq',           label: 'Emotional intelligence', emoji: '❤' },
-    { key: 'resilience',   label: 'Resilience',             emoji: '⛰' },
-    { key: 'health',       label: 'Health',                 emoji: '⚡' },
-    { key: 'money',        label: 'Financial intelligence', emoji: '◎' },
-    { key: 'communication',label: 'Communication',          emoji: '○' },
-    { key: 'ai',           label: 'AI & tech fluency',      emoji: '▣' },
-    { key: 'thinking',     label: 'Critical thinking',      emoji: '◆' },
-    { key: 'ethics',       label: 'Ethics & values',        emoji: '▲' },
-    { key: 'social',       label: 'Social skills',          emoji: '●' }
+    { key: 'money',  label: 'Good with money',  emoji: '💰' },
+    { key: 'fit',    label: 'Fit and healthy',  emoji: '💪' },
+    { key: 'sport',  label: 'Good at sport',    emoji: '⚽' },
+    { key: 'books',  label: 'Reads a lot',      emoji: '📚' },
+    { key: 'cook',   label: 'Can cook',         emoji: '🍳' },
+    { key: 'people', label: 'Good with people', emoji: '🗣️' }
   ],
 
   scenarios: [
-    { title: 'The AI Boom',
-      text: 'AI now does most routine intellectual and technical work faster and cheaper than any human. Whole professions are assistants to a machine.' },
-    { title: 'Climate Migration',
-      text: 'Your child builds their adult life in a country and culture completely different from the one they grew up in.' },
-    { title: 'Career Reset',
-      text: 'At 25, the profession they trained for largely disappears. They have to start again, from nothing, with no obvious next step.' },
-    { title: 'Human Premium',
-      text: 'Automation is everywhere, so anything unmistakably human — trust, taste, craft, leadership, relationships — becomes wildly valuable.' },
-    { title: 'The Long Life',
-      text: 'Medicine routinely pushes healthy life to 100+. Careers last 60 years and are reinvented three or four times.' }
+    { title: 'The Robots Took the Jobs',
+      text: 'It is 2045. Most desk jobs are done by machines, and nobody is quite sure what to do all day. The people thriving are the ones who can do something a machine cannot fake.' },
+
+    { title: 'Everyone Is Famous for Fifteen Seconds',
+      text: 'It is 2045. Attention is the only currency that compounds. Your kid can reach ten million people before breakfast — and be forgotten by lunch.' },
+
+    { title: 'The Four-Hour Week',
+      text: 'It is 2045. Nobody works more than four hours a day, and nobody is paid for hours anyway. What you do with the other twenty decides how your life goes.' },
+
+    { title: 'Humans Only, Please',
+      text: 'It is 2045. Anything a machine can make is free and nobody wants it. People pay extraordinary money for things made, played or cooked by an actual human.' },
+
+    { title: 'Everybody Lives to a Hundred',
+      text: 'It is 2045. A hundred years is the normal innings. Careers last sixty years, friendships last eighty, and burning out at thirty is a genuinely terrible plan.' }
   ]
 };
 
@@ -184,7 +159,7 @@ var SEED = {
  * Sheet is rewritten from SEED — which does discard hand edits, so bump it
  * only for real content upgrades, not for tweaking a single question.
  */
-var CONTENT_V = 2;
+var CONTENT_V = 5;
 
 var SHEET_TABS = {
   Numbers:   ['id','question','optA','optB','optC','optD','answer','fact','source'],
