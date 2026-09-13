@@ -83,29 +83,10 @@ setInterval(poll, 2500);
 /* ---------------------------------------------------------------- join */
 var joinTeam = SAVED.team;
 
-/* A small drawing of the two of them. Deliberately plain: two figures, one
-   bump, no faces to get wrong. Colours come from the theme, not the markup. */
-function coupleArt(){
-  return '' +
-  '<svg class="art" viewBox="0 0 150 96" role="img" aria-label="The parents-to-be">' +
-    '<ellipse cx="75" cy="88" rx="52" ry="5" fill="var(--line)"/>' +
-    // left figure — blue
-    '<circle cx="52" cy="26" r="13" fill="var(--blue)"/>' +
-    '<path d="M31 88V64a21 21 0 0 1 42 0v24z" fill="var(--blue)" opacity=".82"/>' +
-    // right figure — pink, with the bump
-    '<circle cx="99" cy="29" r="12" fill="var(--pink)"/>' +
-    '<path d="M81 88V66a18 18 0 0 1 36 0v22z" fill="var(--pink)" opacity=".82"/>' +
-    '<circle cx="80" cy="70" r="13" fill="var(--pink)" opacity=".82"/>' +
-    // hands meeting over the bump
-    '<path d="M69 66q8 6 16 0" stroke="var(--card)" stroke-width="3" fill="none" stroke-linecap="round"/>' +
-  '</svg>';
-}
-
 function renderJoin(){
   return '' +
-  '<div class="center stack-lg fade" style="padding-top:26px">' +
+  '<div class="center stack-lg fade" style="padding-top:44px">' +
     '<div>' +
-      coupleArt() +
       (V && V.couple
         ? '<p class="couple">' + esc(V.couple) + '</p>'
         : '') +
@@ -218,7 +199,7 @@ function renderQuestion(){
              ' · ' + (V.qIndex + 1) + ' of ' + V.total + '</div>' +
              '<div class="qtext">' + esc(q.question) + '</div>' +
              (q.image ? '<img class="qimg" src="' + esc(q.image) + '" alt="" ' +
-               'onerror="this.style.display=\'none\'">' : '');
+               'onerror="imgFail(this)">' : '');
 
   var body = '';
   if (q.type === 'number'){
@@ -242,7 +223,7 @@ function renderQuestion(){
         if (isImg){
           return '<button class="opt img' + on + '" onclick="pickOpt(\'' + L + '\')">' +
             '<img src="' + esc(q.images[i] || '') + '" alt="" ' +
-              'onerror="this.style.display=\'none\';this.parentNode.classList.add(\'noimg\')"><span class="cap">' + esc(o) + '</span></button>';
+              'onerror="imgFail(this)"><span class="cap">' + esc(o) + '</span></button>';
         }
         return '<button class="opt' + on + '" onclick="pickOpt(\'' + L + '\')">' + esc(optLabel(o)) + '</button>';
       }).join('') + '</div>';
