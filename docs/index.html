@@ -15,7 +15,8 @@
     --shadow:0 1px 2px rgba(38,50,56,.06), 0 6px 20px rgba(38,50,56,.07);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0;background:var(--bg)}
+  html{margin:0;padding:0;background:var(--bg)}
+  body{margin:0;padding:0}
   body{
     font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
     color:var(--ink); -webkit-font-smoothing:antialiased;
@@ -36,6 +37,7 @@
 
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
         padding:18px;box-shadow:var(--shadow)}
+  .board,.card,.team,.opt,input,.btn{position:relative;z-index:1}
   .card.flat{box-shadow:none}
 
   /* ---- scoreboard ---- */
@@ -170,9 +172,24 @@
   @keyframes sp{to{transform:rotate(360deg)}}
   .opt.img.noimg{min-height:64px;display:flex;align-items:center;justify-content:center}
 
+
+  /* A quiet dusk scene sits behind every screen. It is one inline SVG, so it
+     costs no request and cannot fail to load; the wash over it keeps text at
+     full contrast. */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-2;
+    background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20800%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22sky%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23D9E6FA%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23E9E4F6%22%2F%3E%20%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23F9DEE8%22%2F%3E%3Cstop%20offset%3D%220.85%22%20stop-color%3D%22%23FDE6DC%22%2F%3E%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FFF1E6%22%2F%3E%20%3C%2FlinearGradient%3E%20%3CradialGradient%20id%3D%22glow%22%20cx%3D%220.5%22%20cy%3D%220.5%22%20r%3D%220.5%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23FFFFFF%22%20stop-opacity%3D%220.98%22%2F%3E%20%3Cstop%20offset%3D%220.5%22%20stop-color%3D%22%23FFD9BE%22%20stop-opacity%3D%220.6%22%2F%3E%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23FFD9BE%22%20stop-opacity%3D%220%22%2F%3E%20%3C%2FradialGradient%3E%20%3ClinearGradient%20id%3D%22far%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%239FB8DF%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23BCCDE9%22%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%22mid%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%237E9BCB%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%239FB6DD%22%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%22near%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23E79CB6%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23F0BACE%22%2F%3E%20%3C%2FlinearGradient%3E%20%3ClinearGradient%20id%3D%22water%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23F7C9D8%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23EBD6E8%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%22400%22%20height%3D%22800%22%20fill%3D%22url(%23sky)%22%2F%3E%20%3Ccircle%20cx%3D%22292%22%20cy%3D%22196%22%20r%3D%22170%22%20fill%3D%22url(%23glow)%22%2F%3E%20%3Ccircle%20cx%3D%22292%22%20cy%3D%22196%22%20r%3D%2246%22%20fill%3D%22%23FFF7EF%22%2F%3E%20%3Cg%20fill%3D%22%23FFFFFF%22%20opacity%3D%220.7%22%3E%20%3Cellipse%20cx%3D%2286%22%20cy%3D%22150%22%20rx%3D%2258%22%20ry%3D%2214%22%2F%3E%3Cellipse%20cx%3D%22128%22%20cy%3D%22140%22%20rx%3D%2236%22%20ry%3D%2211%22%2F%3E%20%3Cellipse%20cx%3D%22318%22%20cy%3D%22298%22%20rx%3D%2266%22%20ry%3D%2213%22%2F%3E%3Cellipse%20cx%3D%22272%22%20cy%3D%22290%22%20rx%3D%2232%22%20ry%3D%2210%22%2F%3E%20%3Cellipse%20cx%3D%2254%22%20cy%3D%22352%22%20rx%3D%2248%22%20ry%3D%2211%22%2F%3E%3Cellipse%20cx%3D%22352%22%20cy%3D%22108%22%20rx%3D%2240%22%20ry%3D%2210%22%2F%3E%20%3C%2Fg%3E%20%3Cg%20fill%3D%22%23FFFFFF%22%20opacity%3D%220.9%22%3E%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2270%22%20r%3D%221.9%22%2F%3E%3Ccircle%20cx%3D%22150%22%20cy%3D%2246%22%20r%3D%221.5%22%2F%3E%3Ccircle%20cx%3D%22210%22%20cy%3D%2296%22%20r%3D%221.7%22%2F%3E%20%3Ccircle%20cx%3D%22356%22%20cy%3D%2258%22%20r%3D%221.6%22%2F%3E%3Ccircle%20cx%3D%2292%22%20cy%3D%22212%22%20r%3D%221.4%22%2F%3E%3Ccircle%20cx%3D%22374%22%20cy%3D%22230%22%20r%3D%221.7%22%2F%3E%20%3Ccircle%20cx%3D%2224%22%20cy%3D%22132%22%20r%3D%221.3%22%2F%3E%3Ccircle%20cx%3D%22188%22%20cy%3D%22168%22%20r%3D%221.2%22%2F%3E%20%3C%2Fg%3E%20%3Cg%20opacity%3D%220.45%22%20fill%3D%22%23FFFFFF%22%3E%20%3Cpath%20d%3D%22M0%20612h400v14H0z%22%2F%3E%3Cpath%20d%3D%22M0%20640h400v9H0z%22%2F%3E%20%3C%2Fg%3E%20%3Cpath%20d%3D%22M0%20452c62-34%20104%208%20160-14s104-42%20158-18%2058%2030%2082%2022v358H0z%22%20fill%3D%22url(%23far)%22%20opacity%3D%220.6%22%2F%3E%20%3Cpath%20d%3D%22M0%20528c70-30%20116%2016%20174-6s112-34%20158-8%2046%2026%2068%2018v268H0z%22%20fill%3D%22url(%23mid)%22%20opacity%3D%220.58%22%2F%3E%20%3Cpath%20d%3D%22M0%20604h400v196H0z%22%20fill%3D%22url(%23water)%22%20opacity%3D%220.5%22%2F%3E%20%3Cpath%20d%3D%22M0%20596c78-24%20126%2018%20190-4s118-24%20160%204%2034%2016%2050%2012v192H0z%22%20fill%3D%22url(%23near)%22%20opacity%3D%220.62%22%2F%3E%20%3Cg%20opacity%3D%220.62%22%20fill%3D%22%235E7BA8%22%3E%20%3Cpath%20d%3D%22M170%20660c0-11%204-18%209-18s9%207%209%2018v16h-18z%22%2F%3E%3Ccircle%20cx%3D%22179%22%20cy%3D%22636%22%20r%3D%227.5%22%2F%3E%20%3Cpath%20d%3D%22M194%20662c0-10%204-16%208-16s8%206%208%2016v14h-16z%22%2F%3E%3Ccircle%20cx%3D%22202%22%20cy%3D%22640%22%20r%3D%227%22%2F%3E%20%3Ccircle%20cx%3D%22187%22%20cy%3D%22655%22%20r%3D%229%22%2F%3E%20%3C%2Fg%3E%20%3Cellipse%20cx%3D%22190%22%20cy%3D%22680%22%20rx%3D%2240%22%20ry%3D%224%22%20fill%3D%22%235E7BA8%22%20opacity%3D%220.2%22%2F%3E%20%3C%2Fsvg%3E") center center / cover no-repeat;
+  }
+  body::after{
+    content:"";position:fixed;inset:0;z-index:-1;
+    background:linear-gradient(180deg,rgba(250,250,250,.30) 0%,rgba(250,250,250,.44) 44%,rgba(250,250,250,.66) 100%);
+  }
+
   .art{display:block;width:150px;height:96px;margin:0 auto 10px}
-  .couple{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-          color:var(--sub);margin:0 0 10px}
+  .couple{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.16em;
+          text-transform:uppercase;color:var(--slate);margin:0 0 14px;
+          background:rgba(255,255,255,.72);border:1px solid var(--line);
+          border-radius:999px;padding:7px 16px;backdrop-filter:blur(6px)}
 
   .fade{animation:fd .22s ease}
   @keyframes fd{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
@@ -331,29 +348,10 @@ setInterval(poll, 2500);
 /* ---------------------------------------------------------------- join */
 var joinTeam = SAVED.team;
 
-/* A small drawing of the two of them. Deliberately plain: two figures, one
-   bump, no faces to get wrong. Colours come from the theme, not the markup. */
-function coupleArt(){
-  return '' +
-  '<svg class="art" viewBox="0 0 150 96" role="img" aria-label="The parents-to-be">' +
-    '<ellipse cx="75" cy="88" rx="52" ry="5" fill="var(--line)"/>' +
-    // left figure — blue
-    '<circle cx="52" cy="26" r="13" fill="var(--blue)"/>' +
-    '<path d="M31 88V64a21 21 0 0 1 42 0v24z" fill="var(--blue)" opacity=".82"/>' +
-    // right figure — pink, with the bump
-    '<circle cx="99" cy="29" r="12" fill="var(--pink)"/>' +
-    '<path d="M81 88V66a18 18 0 0 1 36 0v22z" fill="var(--pink)" opacity=".82"/>' +
-    '<circle cx="80" cy="70" r="13" fill="var(--pink)" opacity=".82"/>' +
-    // hands meeting over the bump
-    '<path d="M69 66q8 6 16 0" stroke="var(--card)" stroke-width="3" fill="none" stroke-linecap="round"/>' +
-  '</svg>';
-}
-
 function renderJoin(){
   return '' +
-  '<div class="center stack-lg fade" style="padding-top:26px">' +
+  '<div class="center stack-lg fade" style="padding-top:44px">' +
     '<div>' +
-      coupleArt() +
       (V && V.couple
         ? '<p class="couple">' + esc(V.couple) + '</p>'
         : '') +
@@ -466,7 +464,7 @@ function renderQuestion(){
              ' · ' + (V.qIndex + 1) + ' of ' + V.total + '</div>' +
              '<div class="qtext">' + esc(q.question) + '</div>' +
              (q.image ? '<img class="qimg" src="' + esc(q.image) + '" alt="" ' +
-               'onerror="this.style.display=\'none\'">' : '');
+               'onerror="imgFail(this)">' : '');
 
   var body = '';
   if (q.type === 'number'){
@@ -490,7 +488,7 @@ function renderQuestion(){
         if (isImg){
           return '<button class="opt img' + on + '" onclick="pickOpt(\'' + L + '\')">' +
             '<img src="' + esc(q.images[i] || '') + '" alt="" ' +
-              'onerror="this.style.display=\'none\';this.parentNode.classList.add(\'noimg\')"><span class="cap">' + esc(o) + '</span></button>';
+              'onerror="imgFail(this)"><span class="cap">' + esc(o) + '</span></button>';
         }
         return '<button class="opt' + on + '" onclick="pickOpt(\'' + L + '\')">' + esc(optLabel(o)) + '</button>';
       }).join('') + '</div>';
